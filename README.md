@@ -97,7 +97,9 @@ src/
 
 11. **Smart retry** — React Query retries network and server errors with exponential backoff but skips retries on 400 responses (invalid location). Those are deterministic failures; retrying wastes time and quota.
 
-12. **Keyboard accessibility** — Day and time selectors use Tab + Enter/Space rather than the WAI-ARIA roving `tabIndex` arrow-key pattern. The arrow-key pattern is designed for traditional radio buttons; for small pill toggles it's less discoverable. All controls retain `role="radio"` and `aria-checked` for screen-reader semantics.
+12. **Location-aware date near controls** — Once a location resolves, a line like "Los Angeles — Wednesday, Mar 11" appears between the location input and the day/time selectors. It uses the event location's IANA timezone so the date reflects the event location's calendar day, not the browser's. A user in New York planning a Los Angeles event sees Wednesday, Mar 11 even though their local date is Thursday — directly explaining why the forecast is anchored to Wednesday. The header date intentionally stays as browser local time (no timezone attribution there; switching it silently would confuse users).
+
+13. **Keyboard accessibility** — Day and time selectors use Tab + Enter/Space rather than the WAI-ARIA roving `tabIndex` arrow-key pattern. The arrow-key pattern is designed for traditional radio buttons; for small pill toggles it's less discoverable. All controls retain `role="radio"` and `aria-checked` for screen-reader semantics.
 
 
 ## API Key

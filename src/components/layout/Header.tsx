@@ -1,16 +1,10 @@
 import { Sun } from 'lucide-react';
 
-interface HeaderProps {
-  /** IANA timezone of the selected location — when provided, "Today" reflects the location's calendar date */
-  timeZone?: string;
-}
-
-export function Header({ timeZone }: HeaderProps) {
+export function Header() {
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
-    ...(timeZone ? { timeZone } : {}),
   });
 
   return (

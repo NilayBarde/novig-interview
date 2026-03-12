@@ -96,6 +96,18 @@ describe('getCurrentHourInTimeZone', () => {
   });
 });
 
+describe('getNextDayOfWeek — timezone-ahead regression', () => {
+  it('still returns the same day when local midnight+1 converts back to that day in the event timezone', () => {
+    // This documents why the "+1 local day" trick is unsafe for advancing past a day.
+    // March 12 00:00 EST (UTC-5) = March 11 21:00 LA (PDT, UTC-7) = still Wednesday.
+    // So getNextDayOfWeek('Wednesday', 'America/Los_Angeles', march12MidnightEST)
+    // returns March 11, NOT March 18 — the advance logic must not rely on this trick.
+    const march12MidnightEST = new Date('2026-03-12T05:00:00.000Z'); // midnight EST = UTC-5
+    const result = getNextDayOfWeek('Wednesday', 'America/Los_Angeles', march12MidnightEST);
+    expect(formatDate(result)).toBe('2026-03-11'); // still Wednesday in LA
+  });
+});
+
 describe('isTimeWindowPast', () => {
   it('returns false when current hour is before endHour', () => {
     const now = new Date(2026, 2, 11, 10, 0, 0); // 10 AM

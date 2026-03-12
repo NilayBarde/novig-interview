@@ -33,11 +33,14 @@ export function useEventDates(day: DayOfWeek, timeZone?: string, timeRange?: Tim
     // treat the upcoming occurrence (next week) as "This Week".
     if (endHour !== undefined && formatDate(thisWeekDate) === getTodayFormatted(timeZone)) {
       if (isTimeWindowPast(endHour, timeZone)) {
-        // Advance both dates by one week
-        const from = new Date(thisWeekDate);
-        from.setDate(from.getDate() + 1); // shift past today so getNextDayOfWeek finds next occurrence
-        thisWeekDate = getNextDayOfWeek(day, timeZone, from);
-        nextWeekDate = getFollowingWeekDay(day, timeZone, from);
+        // Advance both dates by one week.
+        // We use the already-computed nextWeekDate rather than a "+1 day" trick:
+        // adding 1 local-midnight day doesn't reliably skip past the target day in the
+        // event's timezone when the user's browser is ahead of that timezone
+        // (e.g. EST midnight = LA 9 PM = still the same day in LA).
+        const newThisWeek = nextWeekDate;
+        nextWeekDate = getFollowingWeekDay(day, timeZone, nextWeekDate);
+        thisWeekDate = newThisWeek;
       }
     }
 

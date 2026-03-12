@@ -35,9 +35,18 @@ function WeatherDashboard() {
     config.timeRange
   );
 
+  // Derive a display city from the IANA timezone (e.g. "America/Los_Angeles" → "Los Angeles").
+  // More reliable than parsing resolvedAddress for international locations.
+  const locationCity = timeZone
+    ? timeZone.split('/').pop()?.replace(/_/g, ' ') ?? timeZone
+    : null;
+  const locationDate = timeZone
+    ? new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone })
+    : null;
+
   return (
     <>
-      <Header timeZone={timeZone} />
+      <Header />
       <PageContainer>
         <div className="space-y-6 sm:space-y-8">
           {/* Controls */}
@@ -48,6 +57,11 @@ function WeatherDashboard() {
               resolvedAddress={comparison?.resolvedAddress}
               isLoading={isFetching}
             />
+            {locationCity && locationDate && comparison && (
+              <p className="text-xs text-sand-500">
+                {`${locationCity} — ${locationDate}`}
+              </p>
+            )}
             <div className="flex flex-wrap items-end gap-5">
               <DaySelector selectedDay={config.day} onDayChange={setDay} />
               <TimeRangeSelector selectedRange={config.timeRange} onRangeChange={setTimeRange} />

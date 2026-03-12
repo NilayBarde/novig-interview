@@ -51,7 +51,6 @@ export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: 
 
   return {
     comparison,
-    /** IANA timezone of the resolved location, available once the first fetch completes */
     timeZone: query.data?.timezone,
     isLoading: query.isLoading,
     /** True during background refetches (spinner in location input) */
