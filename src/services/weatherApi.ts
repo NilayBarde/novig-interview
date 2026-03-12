@@ -2,8 +2,14 @@ import { VISUAL_CROSSING_BASE_URL, VISUAL_CROSSING_API_KEY } from '../config/con
 import type { WeatherResponse, WeatherApiError } from '../types/weather';
 
 /**
- * Fetch weather forecast from Visual Crossing Timeline API.
- * Returns 15-day forecast which we slice client-side into "this week" and "next week."
+ * Fetch a 15-day weather forecast from the Visual Crossing Timeline API.
+ *
+ * We make a single API call and slice the response client-side into
+ * "this week" and "next week" — this halves API usage and gives us
+ * atomic loading for both weeks.
+ *
+ * @param location - Free-text location (city name, address, or zip code)
+ * @throws {WeatherApiError} Typed error for invalid location, rate limit, or network failures
  */
 export async function fetchWeatherForecast(location: string): Promise<WeatherResponse> {
   if (!VISUAL_CROSSING_API_KEY) {
@@ -33,10 +39,12 @@ export async function fetchWeatherForecast(location: string): Promise<WeatherRes
   return response.json() as Promise<WeatherResponse>;
 }
 
+/** Build a typed API error object */
 function createError(type: WeatherApiError['type'], message: string, status?: number): WeatherApiError {
   return { type, message, status };
 }
 
+/** Type guard for {@link WeatherApiError} */
 export function isWeatherApiError(error: unknown): error is WeatherApiError {
   return (
     typeof error === 'object' &&

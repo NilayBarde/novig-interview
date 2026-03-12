@@ -6,6 +6,7 @@ import { PageContainer } from './components/layout/PageContainer';
 import { LocationInput } from './components/controls/LocationInput';
 import { DaySelector } from './components/controls/DaySelector';
 import { TimeRangeSelector } from './components/controls/TimeRangeSelector';
+import { TempUnitToggle } from './components/controls/TempUnitToggle';
 import { WeatherComparison } from './components/weather/WeatherComparison';
 import { LoadingState } from './components/common/LoadingState';
 import { ErrorState } from './components/common/ErrorState';
@@ -29,7 +30,7 @@ function App() {
 }
 
 function WeatherDashboard() {
-  const { config, setLocation, setDay, setTimeRange } = useEventConfig();
+  const { config, setLocation, setDay, setTimeRange, setTempUnit } = useEventConfig();
   const { comparison, isLoading, isFetching, error, refetch } = useWeatherForecast(
     config.location,
     config.day,
@@ -39,15 +40,21 @@ function WeatherDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Controls */}
-      <div className="glass-warm rounded-2xl p-5 sm:p-6 shadow-lg shadow-sand-300/20 animate-fade-up">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <LocationInput
-            onLocationChange={setLocation}
-            resolvedAddress={comparison?.resolvedAddress}
-            isLoading={isFetching}
-          />
+      <div className="glass-warm rounded-2xl p-5 sm:p-6 shadow-lg shadow-sand-300/20 animate-fade-up space-y-5">
+        <LocationInput
+          onLocationChange={setLocation}
+          resolvedAddress={comparison?.resolvedAddress}
+          isLoading={isFetching}
+        />
+        <div className="flex flex-wrap items-end gap-5">
           <DaySelector selectedDay={config.day} onDayChange={setDay} />
           <TimeRangeSelector selectedRange={config.timeRange} onRangeChange={setTimeRange} />
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-widest text-sand-500">
+              Units
+            </label>
+            <TempUnitToggle unit={config.tempUnit} onChange={setTempUnit} />
+          </div>
         </div>
       </div>
 
@@ -57,7 +64,7 @@ function WeatherDashboard() {
       ) : isLoading && config.location ? (
         <LoadingState />
       ) : comparison ? (
-        <WeatherComparison comparison={comparison} />
+        <WeatherComparison comparison={comparison} tempUnit={config.tempUnit} />
       ) : (
         <EmptyState />
       )}

@@ -15,7 +15,10 @@ export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
 
-    if (inputValue.trim().length === 0) return;
+    if (inputValue.trim().length === 0) {
+      onLocationChange('');
+      return;
+    }
 
     timerRef.current = setTimeout(() => {
       onLocationChange(inputValue.trim());

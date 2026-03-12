@@ -1,7 +1,8 @@
 import { Thermometer, Droplets, Wind, Cloud } from 'lucide-react';
 import type { WeatherSummary } from '../../types/app';
+import type { TempUnit } from '../../config/constants';
 import { getAllVerdicts, getOverallSeverity } from '../../services/weatherMessages';
-import { roundTemp } from '../../utils/temperatureUtils';
+import { displayTemp } from '../../utils/temperatureUtils';
 import { WeatherMessage } from './WeatherMessage';
 
 const severityAccent = {
@@ -13,10 +14,11 @@ const severityAccent = {
 interface WeatherCardProps {
   summary: WeatherSummary;
   label: string;
+  tempUnit: TempUnit;
   delay?: number;
 }
 
-export function WeatherCard({ summary, label, delay = 0 }: WeatherCardProps) {
+export function WeatherCard({ summary, label, tempUnit, delay = 0 }: WeatherCardProps) {
   const verdicts = getAllVerdicts(summary);
   const severity = getOverallSeverity(verdicts);
 
@@ -39,7 +41,7 @@ export function WeatherCard({ summary, label, delay = 0 }: WeatherCardProps) {
           </div>
           <div className="text-right">
             <p className="font-[family-name:var(--font-display)] text-3xl text-sand-900 leading-none">
-              {roundTemp(summary.avgTemp)}°
+              {displayTemp(summary.avgTemp, tempUnit)}°
             </p>
             <p className="text-xs text-sand-400 mt-1">avg</p>
           </div>
@@ -50,7 +52,7 @@ export function WeatherCard({ summary, label, delay = 0 }: WeatherCardProps) {
           <StatItem
             icon={<Thermometer className="w-3.5 h-3.5 text-ember-400" />}
             label="High / Low"
-            value={`${roundTemp(summary.highTemp)}° / ${roundTemp(summary.lowTemp)}°`}
+            value={`${displayTemp(summary.highTemp, tempUnit)}° / ${displayTemp(summary.lowTemp, tempUnit)}°`}
           />
           <StatItem
             icon={<Droplets className="w-3.5 h-3.5 text-sky-400" />}
@@ -71,8 +73,8 @@ export function WeatherCard({ summary, label, delay = 0 }: WeatherCardProps) {
 
         {/* Verdicts */}
         <div className="space-y-1.5">
-          {verdicts.map((v, i) => (
-            <WeatherMessage key={i} verdict={v} />
+          {verdicts.map((v) => (
+            <WeatherMessage key={v.message} verdict={v} />
           ))}
         </div>
       </div>

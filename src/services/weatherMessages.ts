@@ -1,6 +1,19 @@
+/**
+ * Pure functions that map weather data to human-friendly verdicts.
+ *
+ * Each verdict carries a severity level (`good` / `caution` / `warning`)
+ * so the UI can color-code messages for at-a-glance readability.
+ *
+ * All threshold constants are defined in `config/constants.ts`.
+ */
+
 import { TEMP_THRESHOLDS, PRECIP_THRESHOLDS, WIND_THRESHOLDS } from '../config/constants';
 import type { WeatherVerdict, WeatherSummary, Severity } from '../types/app';
 
+/**
+ * Classify the average temperature into a comfort verdict.
+ * Thresholds: <50 cold, 50–59 cool, 60–75 nice, 76–85 warm, >85 hot.
+ */
 export function getTemperatureVerdict(avgTemp: number): WeatherVerdict {
   if (avgTemp < TEMP_THRESHOLDS.COLD) {
     return { message: 'Bundle up — it\'ll be cold', severity: 'warning' };
@@ -18,9 +31,11 @@ export function getTemperatureVerdict(avgTemp: number): WeatherVerdict {
 }
 
 /**
- * Uses precipprob (precipitation probability) rather than raw humidity.
- * Humidity 25-75% doesn't reliably indicate rain — precipprob is the
- * model-computed chance of measurable precipitation.
+ * Classify precipitation likelihood into an action-oriented verdict.
+ *
+ * Uses `precipprob` (model-computed precipitation probability) rather
+ * than raw humidity. Humidity of 25–75% does not reliably indicate rain;
+ * precipprob is the actual chance of measurable precipitation.
  */
 export function getRainVerdict(precipProb: number): WeatherVerdict {
   if (precipProb < PRECIP_THRESHOLDS.LOW) {
@@ -32,6 +47,7 @@ export function getRainVerdict(precipProb: number): WeatherVerdict {
   return { message: 'Rain likely — consider rescheduling', severity: 'warning' };
 }
 
+/** Classify wind conditions for outdoor comfort */
 export function getWindVerdict(windSpeed: number): WeatherVerdict {
   if (windSpeed < WIND_THRESHOLDS.BREEZY) {
     return { message: 'Calm winds', severity: 'good' };
@@ -42,6 +58,11 @@ export function getWindVerdict(windSpeed: number): WeatherVerdict {
   return { message: 'Very windy — outdoor activities may be difficult', severity: 'warning' };
 }
 
+/**
+ * Compare two weeks and produce a recommendation verdict.
+ * Uses a simple 0–5 scoring heuristic that weights temperature comfort,
+ * precipitation risk, and wind speed equally.
+ */
 export function getComparisonVerdict(
   thisWeek: WeatherSummary,
   nextWeek: WeatherSummary
@@ -66,26 +87,28 @@ export function getComparisonVerdict(
 }
 
 /**
- * Score from 0 (worst) to 5 (best).
- * Higher = more favorable for outdoor activities.
+ * Score a day's weather from 0 (worst) to 5 (best) for outdoor suitability.
+ *
+ * Scoring breakdown:
+ * - Temperature: +2 if 60–75°F (ideal), +1 if 50–85°F (tolerable)
+ * - Precipitation: +2 if <30% chance, +1 if <70%
+ * - Wind: +1 if <15 mph
  */
 function computeWeatherScore(summary: WeatherSummary): number {
   let score = 0;
 
-  // Temperature: ideal 60-75
   if (summary.avgTemp >= 60 && summary.avgTemp <= 75) score += 2;
   else if (summary.avgTemp >= 50 && summary.avgTemp <= 85) score += 1;
 
-  // Precip: lower is better
   if (summary.precipProb < 30) score += 2;
   else if (summary.precipProb < 70) score += 1;
 
-  // Wind: calmer is better
   if (summary.avgWindSpeed < 15) score += 1;
 
   return score;
 }
 
+/** Get all three verdicts (temperature, rain, wind) for a day's weather */
 export function getAllVerdicts(summary: WeatherSummary): WeatherVerdict[] {
   return [
     getTemperatureVerdict(summary.avgTemp),
@@ -94,6 +117,7 @@ export function getAllVerdicts(summary: WeatherSummary): WeatherVerdict[] {
   ];
 }
 
+/** Return the worst severity found among a list of verdicts */
 export function getOverallSeverity(verdicts: WeatherVerdict[]): Severity {
   if (verdicts.some((v) => v.severity === 'warning')) return 'warning';
   if (verdicts.some((v) => v.severity === 'caution')) return 'caution';

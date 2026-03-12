@@ -1,21 +1,25 @@
 import { ArrowRight } from 'lucide-react';
 import type { ComparisonResult } from '../../types/app';
+import type { TempUnit } from '../../config/constants';
 import { getComparisonVerdict } from '../../services/weatherMessages';
+import { displayTemp } from '../../utils/temperatureUtils';
 import { WeatherCard } from './WeatherCard';
 import { WeatherChart } from './WeatherChart';
 import { WeatherMessage } from './WeatherMessage';
 
 interface WeatherComparisonProps {
   comparison: ComparisonResult;
+  tempUnit: TempUnit;
 }
 
-export function WeatherComparison({ comparison }: WeatherComparisonProps) {
+export function WeatherComparison({ comparison, tempUnit }: WeatherComparisonProps) {
   const { thisWeek, nextWeek } = comparison;
 
-  // Synchronized Y-axis domain for honest visual comparison
+  // Synchronized Y-axis domain for honest visual comparison.
+  // Computed in display units so the chart axis matches what's rendered.
   const allTemps = [
-    ...thisWeek.hourlyTemps.map((h) => h.temp),
-    ...nextWeek.hourlyTemps.map((h) => h.temp),
+    ...thisWeek.hourlyTemps.map((h) => displayTemp(h.temp, tempUnit)),
+    ...nextWeek.hourlyTemps.map((h) => displayTemp(h.temp, tempUnit)),
   ];
   const tempMin = Math.floor(Math.min(...allTemps) / 5) * 5 - 5;
   const tempMax = Math.ceil(Math.max(...allTemps) / 5) * 5 + 5;
@@ -26,18 +30,18 @@ export function WeatherComparison({ comparison }: WeatherComparisonProps) {
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Comparison verdict banner */}
-      <div className="glass-warm rounded-2xl p-4 sm:p-5 shadow-lg shadow-sand-300/20" style={{ animationDelay: '0ms' }}>
+      <div className="glass-warm rounded-2xl p-4 sm:p-5 shadow-lg shadow-sand-300/20">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="flex items-center gap-2 text-sand-500">
-              <span className="font-[family-name:var(--font-display)] text-sm text-sand-700">
-                {thisWeek.dayLabel}
-              </span>
-              <ArrowRight className="w-3.5 h-3.5" />
-              <span className="font-[family-name:var(--font-display)] text-sm text-sand-700">
-                {nextWeek.dayLabel}
-              </span>
-            </div>
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-sand-400">This</span>
+            <span className="font-[family-name:var(--font-display)] text-sm text-sand-700">
+              {thisWeek.dayLabel}
+            </span>
+            <ArrowRight className="w-3.5 h-3.5 text-sand-400" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-sand-400">Next</span>
+            <span className="font-[family-name:var(--font-display)] text-sm text-sand-700">
+              {nextWeek.dayLabel}
+            </span>
           </div>
           <WeatherMessage verdict={comparisonVerdict} />
         </div>
@@ -45,14 +49,14 @@ export function WeatherComparison({ comparison }: WeatherComparisonProps) {
 
       {/* Side-by-side cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-        <WeatherCard summary={thisWeek} label="This Week" delay={50} />
-        <WeatherCard summary={nextWeek} label="Next Week" delay={150} />
+        <WeatherCard summary={thisWeek} label="This Week" tempUnit={tempUnit} delay={50} />
+        <WeatherCard summary={nextWeek} label="Next Week" tempUnit={tempUnit} delay={150} />
       </div>
 
       {/* Side-by-side charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-        <WeatherChart summary={thisWeek} tempDomain={tempDomain} label="This Week" delay={250} />
-        <WeatherChart summary={nextWeek} tempDomain={tempDomain} label="Next Week" delay={350} />
+        <WeatherChart summary={thisWeek} tempDomain={tempDomain} tempUnit={tempUnit} label="This Week" delay={250} />
+        <WeatherChart summary={nextWeek} tempDomain={tempDomain} tempUnit={tempUnit} label="Next Week" delay={350} />
       </div>
     </div>
   );

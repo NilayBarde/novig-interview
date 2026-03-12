@@ -6,13 +6,6 @@ interface TimeRangeSelectorProps {
   onRangeChange: (range: TimeRange) => void;
 }
 
-const SHORT_LABELS: Record<string, string> = {
-  'Morning (6am–12pm)': 'Morning',
-  'Afternoon (12pm–5pm)': 'Afternoon',
-  'Evening (5pm–9pm)': 'Evening',
-  'All Day': 'All Day',
-};
-
 export function TimeRangeSelector({ selectedRange, onRangeChange }: TimeRangeSelectorProps) {
   return (
     <div className="space-y-2">
@@ -36,7 +29,7 @@ export function TimeRangeSelector({ selectedRange, onRangeChange }: TimeRangeSel
               `}
             >
               <span className="hidden sm:inline">{range.label}</span>
-              <span className="sm:hidden">{SHORT_LABELS[range.label]}</span>
+              <span className="sm:hidden">{range.shortLabel}</span>
             </button>
           );
         })}

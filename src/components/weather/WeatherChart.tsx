@@ -9,20 +9,28 @@ import {
   Tooltip,
 } from 'recharts';
 import type { WeatherSummary } from '../../types/app';
+import type { TempUnit } from '../../config/constants';
+import { displayTemp } from '../../utils/temperatureUtils';
 
 interface WeatherChartProps {
   summary: WeatherSummary;
   tempDomain: [number, number];
+  tempUnit: TempUnit;
   label: string;
   delay?: number;
 }
 
-export function WeatherChart({ summary, tempDomain, label, delay = 0 }: WeatherChartProps) {
-  const data = summary.hourlyTemps.map((ht, i) => ({
+export function WeatherChart({ summary, tempDomain, tempUnit, label, delay = 0 }: WeatherChartProps) {
+  // Join by hour value, not positional index, to avoid silent misalignment
+  const precipByHour = new Map(summary.hourlyPrecipProb.map((h) => [h.hour, h.precipProb]));
+
+  const data = summary.hourlyTemps.map((ht) => ({
     hour: formatHour(ht.hour),
-    temp: Math.round(ht.temp),
-    precipProb: Math.round(summary.hourlyPrecipProb[i]?.precipProb ?? 0),
+    temp: displayTemp(ht.temp, tempUnit),
+    precipProb: Math.round(precipByHour.get(ht.hour) ?? 0),
   }));
+
+  const unitLabel = tempUnit === 'C' ? '°C' : '°F';
 
   return (
     <div
@@ -68,7 +76,7 @@ export function WeatherChart({ summary, tempDomain, label, delay = 0 }: WeatherC
                 padding: '8px 12px',
               }}
               formatter={(value, name) => {
-                if (name === 'temp') return [`${value}°F`, 'Temperature'];
+                if (name === 'temp') return [`${value}${unitLabel}`, 'Temperature'];
                 return [`${value}%`, 'Rain chance'];
               }}
               labelStyle={{ color: '#5e4f3c', fontWeight: 600, marginBottom: 4 }}
