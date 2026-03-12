@@ -46,7 +46,7 @@ export type TimeRange = (typeof TIME_RANGES)[number];
  * outdoor thermal-comfort guidance for recreational activities.
  */
 export const TEMP_THRESHOLDS = {
-  COLD: 50,
+  COLD: 32,
   COOL: 60,
   NICE_MAX: 75,
   WARM_MAX: 85,
@@ -70,21 +70,6 @@ export const PRECIP_THRESHOLDS = {
 export const WIND_THRESHOLDS = {
   BREEZY: 15,
   WINDY: 25,
-} as const;
-
-/**
- * Comparison score difference thresholds for the week-vs-week verdict.
- *
- * The scoring heuristic (`computeWeatherScore`) produces a 0–5 scale.
- * Max score is 7 (temp 2 + precip 3 + wind 1 + wind-bonus 1).
- * Precipitation is weighted highest (3 pts) because rain is the primary
- * reason an outdoor meetup gets cancelled — per the user story.
- * SIGNIFICANT = ~28% of max (2/7): two metrics clearly improved.
- * SLIGHT = ~10% of max (0.75/7): one meaningful metric improved.
- */
-export const COMPARISON_THRESHOLDS = {
-  SIGNIFICANT: 2.0,
-  SLIGHT: 0.75,
 } as const;
 
 /** User-selectable temperature display unit */

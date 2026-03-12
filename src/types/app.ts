@@ -56,10 +56,3 @@ export interface WeatherSummary {
   hourlyWindSpeed: { hour: number; windSpeed: number }[];
 }
 
-/** Side-by-side comparison of two weekly forecasts */
-export interface ComparisonResult {
-  thisWeek: WeatherSummary;
-  nextWeek: WeatherSummary;
-  /** Geocoded address returned by the API */
-  resolvedAddress: string;
-}

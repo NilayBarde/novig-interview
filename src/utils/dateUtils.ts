@@ -60,7 +60,7 @@ function getYmdInTimeZone(from: Date, timeZone?: string): { year: number; month:
  * Add days to a calendar date (Y/M/D) in a DST-safe way.
  * The returned Date is in the local timezone but represents the correct calendar date.
  */
-function addDaysToYmd(ymd: { year: number; month: number; day: number }, days: number): Date {
+export function addDaysToYmd(ymd: { year: number; month: number; day: number }, days: number): Date {
   const utc = new Date(Date.UTC(ymd.year, ymd.month - 1, ymd.day + days));
   return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
 }
@@ -89,6 +89,27 @@ export function getFollowingWeekDay(dayName: DayOfWeek, timeZone?: string, from:
     { year: nextOccurrence.getFullYear(), month: nextOccurrence.getMonth() + 1, day: nextOccurrence.getDate() },
     7,
   );
+}
+
+/**
+ * Compute the base date (offset 0) for a recurring event day.
+ *
+ * If today IS the selected day but the time window has already ended,
+ * advances by one week so callers always receive a future occurrence.
+ * All week-offset calculations should start from this base.
+ *
+ * @param endHour - The inclusive end hour of the time window; omit to skip advance logic.
+ */
+export function getBaseEventDate(dayName: DayOfWeek, timeZone?: string, endHour?: number): Date {
+  const base = getNextDayOfWeek(dayName, timeZone);
+  if (
+    endHour !== undefined &&
+    formatDate(base) === getTodayFormatted(timeZone) &&
+    isTimeWindowPast(endHour, timeZone)
+  ) {
+    return getFollowingWeekDay(dayName, timeZone);
+  }
+  return base;
 }
 
 /** Format Date as YYYY-MM-DD */

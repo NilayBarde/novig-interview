@@ -1,23 +1,26 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchWeatherForecast, isWeatherApiError } from '../services/weatherApi';
 import { useEventDates } from './useEventDates';
+import { getBaseEventDate, addDaysToYmd, formatDate } from '../utils/dateUtils';
 import { QUERY_STALE_TIME, QUERY_GC_TIME } from '../config/constants';
 import type { DayOfWeek, TimeRange } from '../config/constants';
-import type { WeatherSummary, ComparisonResult } from '../types/app';
+import type { WeatherSummary } from '../types/app';
 import type { DayData } from '../types/weather';
 
 /**
- * Fetch and transform weather data into a side-by-side comparison.
+ * Fetch and transform weather data for a single week occurrence.
  *
  * Makes a single API call for the full 15-day forecast, then extracts
- * the two target days (this week and next week) and summarizes each
+ * the target day (determined by day + weekOffset) and summarizes it
  * within the selected time range.
  *
- * @param location - Free-text location string
- * @param day      - Day of the week for the recurring event
- * @param timeRange - Hourly window to focus on
+ * @param location   - Free-text location string
+ * @param day        - Day of the week for the recurring event
+ * @param timeRange  - Hourly window to focus on
+ * @param weekOffset - 0 = this week, 1 = next week, 2 = in 2 weeks
  */
-export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: TimeRange) {
+export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: TimeRange, weekOffset: number) {
   const query = useQuery({
     queryKey: ['weather', location],
     queryFn: ({ signal }) => fetchWeatherForecast(location, signal),
@@ -32,25 +35,45 @@ export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: 
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
-  const dates = useEventDates(day, query.data?.timezone, timeRange);
+  const eventDate = useEventDates(day, weekOffset, query.data?.timezone, timeRange);
 
-  const comparison: ComparisonResult | null = (() => {
+  const forecast: WeatherSummary | null = (() => {
     if (!query.data) return null;
-
-    const thisWeekDay = query.data.days.find((d) => d.datetime === dates.thisWeek.formatted);
-    const nextWeekDay = query.data.days.find((d) => d.datetime === dates.nextWeek.formatted);
-
-    if (!thisWeekDay || !nextWeekDay) return null;
-
-    return {
-      thisWeek: summarizeDay(thisWeekDay, dates.thisWeek.human, timeRange),
-      nextWeek: summarizeDay(nextWeekDay, dates.nextWeek.human, timeRange),
-      resolvedAddress: query.data.resolvedAddress,
-    };
+    const dayData = query.data.days.find((d) => d.datetime === eventDate.formatted);
+    if (!dayData) return null;
+    return summarizeDay(dayData, eventDate.human, timeRange);
   })();
 
+  // Count how many weekly occurrences (offsets 0, 1, 2) exist in the API data.
+  // weekOffset is a client-side slice — not a cache dimension — so we compute
+  // availability for all offsets from the same query result.
+  const availableWeeks = useMemo(() => {
+    if (!query.data) return 0;
+    const tz = query.data.timezone;
+    const baseDate = getBaseEventDate(day, tz, timeRange?.endHour);
+
+    let count = 0;
+    for (let i = 0; i <= 2; i++) {
+      const targetDate =
+        i === 0
+          ? baseDate
+          : addDaysToYmd(
+              { year: baseDate.getFullYear(), month: baseDate.getMonth() + 1, day: baseDate.getDate() },
+              i * 7,
+            );
+      if (query.data.days.some((d) => d.datetime === formatDate(targetDate))) {
+        count++;
+      } else {
+        break;
+      }
+    }
+    return count;
+  }, [query.data, day, timeRange]);
+
   return {
-    comparison,
+    forecast,
+    availableWeeks,
+    resolvedAddress: query.data?.resolvedAddress ?? null,
     timeZone: query.data?.timezone,
     isLoading: query.isLoading,
     /** True during background refetches (spinner in location input) */
