@@ -24,19 +24,7 @@ export function DaySelector({ selectedDay, onDayChange }: DaySelectorProps) {
               key={day}
               role="radio"
               aria-checked={isActive}
-              tabIndex={isActive ? 0 : -1}
               onClick={() => onDayChange(day)}
-              onKeyDown={(e) => {
-                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                  e.preventDefault();
-                  const nextIndex = (DAYS_OF_WEEK.indexOf(day) + 1) % DAYS_OF_WEEK.length;
-                  onDayChange(DAYS_OF_WEEK[nextIndex]);
-                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                  e.preventDefault();
-                  const prevIndex = (DAYS_OF_WEEK.indexOf(day) - 1 + DAYS_OF_WEEK.length) % DAYS_OF_WEEK.length;
-                  onDayChange(DAYS_OF_WEEK[prevIndex]);
-                }
-              }}
               className={`
                 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
                 cursor-pointer border-none

@@ -89,7 +89,7 @@ src/
 
 7. **Clean Query Cancellation** — The `LocationInput` utilizes a standard JS debounce, but slow external network requests are aggressively pruned via `AbortController` signals passed from React Query to the `fetch` API, neutralizing edge-case race conditions as the user types.
 
-8. **Semantic Accessibility** — Custom UI radio-button clusters (like `DaySelector`) utilize explicit `role="radiogroup"` / `role="radio"` attributes and support standard keyboard arrow navigation for screen readers.
+8. **Keyboard Accessibility** — Day and time selectors use Tab + Enter/Space rather than the strict WAI-ARIA radiogroup arrow-key pattern. While the spec recommends roving `tabIndex` with arrow keys for `role="radiogroup"`, that pattern assumes traditional radio buttons. For small, visually distinct pill-style toggles, Tab-based navigation is more discoverable and intuitive — matching the approach used by Radix UI, shadcn/ui, and other modern design systems. All controls retain `role="radio"` and `aria-checked` for screen reader semantics.
 
 9. **Address Autocomplete** — Custom autocomplete built on the Mapbox Geocoding v6 REST API with debounced fetch, keyboard navigation, and full ARIA combobox semantics — no third-party UI components or shadow DOM overrides.
 
