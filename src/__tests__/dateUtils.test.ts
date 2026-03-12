@@ -29,6 +29,14 @@ describe('getNextDayOfWeek', () => {
     const result = getNextDayOfWeek('Sunday', undefined, saturday);
     expect(formatDate(result)).toBe('2026-03-15');
   });
+
+  it('uses target timezone weekday near DST boundary (America/New_York)', () => {
+    // 2026-03-08 is the DST transition date in New York.
+    // This UTC instant is still Saturday evening in New York (Mar 7).
+    const from = new Date('2026-03-08T01:30:00.000Z');
+    const result = getNextDayOfWeek('Saturday', 'America/New_York', from);
+    expect(formatDate(result)).toBe('2026-03-07');
+  });
 });
 
 describe('getFollowingWeekDay', () => {

@@ -65,7 +65,7 @@ test('WeatherWeek Core Flow', async ({ page }) => {
   });
 
   // Load the app
-  await page.goto('http://localhost:5173');
+  await page.goto('/');
 
   // Verify empty state is visible initially
   await expect(page.getByText("Where's the meetup?")).toBeVisible();

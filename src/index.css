@@ -138,3 +138,26 @@ body::before {
   fill: var(--color-sand-500);
   font-size: 11px;
 }
+
+/* Suppress pointer/touch focus outlines on charts, keep keyboard focus visible */
+.recharts-wrapper:focus:not(:focus-visible),
+.recharts-surface:focus:not(:focus-visible),
+.recharts-wrapper svg:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus-visible,
+.recharts-wrapper svg:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-sky-500) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .recharts-wrapper:focus,
+  .recharts-surface:focus,
+  .recharts-wrapper svg:focus {
+    outline: none;
+  }
+}

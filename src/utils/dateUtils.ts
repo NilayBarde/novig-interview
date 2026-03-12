@@ -2,19 +2,67 @@ import type { DayOfWeek } from '../config/constants';
 import { DAYS_OF_WEEK } from '../config/constants';
 
 /**
- * Returns a new Date object representing "now" (or the provided date) in the target timezone.
- * We do this by formatting the time in the target TZ and parsing it back as local time.
+ * Returns the day-of-week index (0=Sunday..6=Saturday) for the target timezone.
+ *
+ * Uses `Intl.DateTimeFormat(...).formatToParts()` so we never parse locale strings
+ * or depend on the host timezone's DST rules for the target timezone.
  */
-function getNowInTimezone(timeZone?: string, from: Date = new Date()): Date {
-  if (!timeZone) return from;
+function getWeekdayIndexInTimeZone(from: Date, timeZone?: string): number {
+  if (!timeZone) return from.getDay();
 
   try {
-    const tzString = from.toLocaleString('en-US', { timeZone });
-    return new Date(tzString);
-  } catch (e) {
-    // Fallback if timezone is invalid
-    return from;
+    const formatter = new Intl.DateTimeFormat('en-US', { timeZone, weekday: 'short' });
+    const weekday = formatter.format(from);
+    const map: Record<string, number> = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
+    return map[weekday] ?? from.getDay();
+  } catch {
+    return from.getDay();
   }
+}
+
+/** Return the target timezone's calendar Y/M/D (month is 1-based). */
+function getYmdInTimeZone(from: Date, timeZone?: string): { year: number; month: number; day: number } {
+  if (!timeZone) {
+    return { year: from.getFullYear(), month: from.getMonth() + 1, day: from.getDate() };
+  }
+
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(from);
+
+    const year = Number(parts.find((p) => p.type === 'year')?.value);
+    const month = Number(parts.find((p) => p.type === 'month')?.value);
+    const day = Number(parts.find((p) => p.type === 'day')?.value);
+
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      return { year: from.getFullYear(), month: from.getMonth() + 1, day: from.getDate() };
+    }
+
+    return { year, month, day };
+  } catch {
+    return { year: from.getFullYear(), month: from.getMonth() + 1, day: from.getDate() };
+  }
+}
+
+/**
+ * Add days to a calendar date (Y/M/D) in a DST-safe way.
+ * The returned Date is in the local timezone but represents the correct calendar date.
+ */
+function addDaysToYmd(ymd: { year: number; month: number; day: number }, days: number): Date {
+  const utc = new Date(Date.UTC(ymd.year, ymd.month - 1, ymd.day + days));
+  return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate());
 }
 
 /**
@@ -22,15 +70,13 @@ function getNowInTimezone(timeZone?: string, from: Date = new Date()): Date {
  * If today IS that day (in the target timezone), returns today.
  */
 export function getNextDayOfWeek(dayName: DayOfWeek, timeZone?: string, from: Date = new Date()): Date {
-  const currentDate = getNowInTimezone(timeZone, from);
   const targetIndex = DAYS_OF_WEEK.indexOf(dayName);
-  const currentIndex = currentDate.getDay();
+  const currentIndex = getWeekdayIndexInTimeZone(from, timeZone);
   let daysUntil = targetIndex - currentIndex;
   if (daysUntil < 0) daysUntil += 7;
 
-  const result = new Date(from);
-  result.setDate(result.getDate() + daysUntil);
-  return result;
+  const baseYmd = getYmdInTimeZone(from, timeZone);
+  return addDaysToYmd(baseYmd, daysUntil);
 }
 
 /**
@@ -39,9 +85,10 @@ export function getNextDayOfWeek(dayName: DayOfWeek, timeZone?: string, from: Da
  */
 export function getFollowingWeekDay(dayName: DayOfWeek, timeZone?: string, from: Date = new Date()): Date {
   const nextOccurrence = getNextDayOfWeek(dayName, timeZone, from);
-  const result = new Date(nextOccurrence);
-  result.setDate(result.getDate() + 7);
-  return result;
+  return addDaysToYmd(
+    { year: nextOccurrence.getFullYear(), month: nextOccurrence.getMonth() + 1, day: nextOccurrence.getDate() },
+    7,
+  );
 }
 
 /** Format Date as YYYY-MM-DD */
@@ -54,9 +101,6 @@ export function formatDate(date: Date): string {
 
 /** Format Date as human-readable: "Tue, Mar 11" */
 export function formatDateHuman(date: Date): string {
-  // We use the browser's default here because the underlying Date object
-  // has already been shifted to represent the correct year/month/day
-  // values for the target timezone via getNowInTimezone.
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',

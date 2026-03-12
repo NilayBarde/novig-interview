@@ -197,7 +197,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
           aria-haspopup="listbox"
           aria-controls="location-suggestions"
           aria-activedescendant={activeIndex >= 0 ? `suggestion-${activeIndex}` : undefined}
-          className="w-full pl-11 pr-10 py-3 rounded-xl
+          className="w-full pl-10 sm:pl-11 pr-9 sm:pr-10 py-3 rounded-xl truncate
             bg-white/40 backdrop-blur-lg
             border border-white/30
             shadow-[inset_0_0_0_1px_rgba(255,255,255,0.4)]
@@ -257,7 +257,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
       </div>
 
       {resolvedAddress && (
-        <p className="text-xs text-sand-500 pl-1 animate-fade-up">
+        <p className="text-xs text-sand-500 pl-1 animate-fade-up break-words">
           <span className="text-sage-500 font-semibold">Found:</span>{' '}
           {resolvedAddress}
         </p>
