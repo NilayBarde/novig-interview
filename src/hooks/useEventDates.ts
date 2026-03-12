@@ -1,17 +1,45 @@
 import { useMemo } from 'react';
-import type { DayOfWeek } from '../config/constants';
-import { getNextDayOfWeek, getFollowingWeekDay, formatDate, formatDateHuman } from '../utils/dateUtils';
+import type { DayOfWeek, TimeRange } from '../config/constants';
+import {
+  getNextDayOfWeek,
+  getFollowingWeekDay,
+  formatDate,
+  formatDateHuman,
+  getTodayFormatted,
+  isTimeWindowPast,
+} from '../utils/dateUtils';
 
 /**
  * Compute the "this week" and "next week" dates for a given day of the week.
  *
+ * If today IS the selected day but the chosen time window has already passed,
+ * "This Week" advances to next week (and "Next Week" to the week after) so
+ * users never see stale historical data presented as a forecast.
+ *
  * Returns both machine-readable (YYYY-MM-DD) and human-readable formats,
  * memoized so downstream hooks don't re-run unnecessarily.
  */
-export function useEventDates(day: DayOfWeek, timeZone?: string) {
+export function useEventDates(day: DayOfWeek, timeZone?: string, timeRange?: TimeRange) {
+  // Depend only on endHour (the one field we read), not the full object reference.
+  // This prevents the memo from busting on every render when the parent passes
+  // a new-but-equivalent TimeRange object.
+  const endHour = timeRange?.endHour;
+
   return useMemo(() => {
-    const thisWeekDate = getNextDayOfWeek(day, timeZone);
-    const nextWeekDate = getFollowingWeekDay(day, timeZone);
+    let thisWeekDate = getNextDayOfWeek(day, timeZone);
+    let nextWeekDate = getFollowingWeekDay(day, timeZone);
+
+    // If today is the selected day but the time window has already ended,
+    // treat the upcoming occurrence (next week) as "This Week".
+    if (endHour !== undefined && formatDate(thisWeekDate) === getTodayFormatted(timeZone)) {
+      if (isTimeWindowPast(endHour, timeZone)) {
+        // Advance both dates by one week
+        const from = new Date(thisWeekDate);
+        from.setDate(from.getDate() + 1); // shift past today so getNextDayOfWeek finds next occurrence
+        thisWeekDate = getNextDayOfWeek(day, timeZone, from);
+        nextWeekDate = getFollowingWeekDay(day, timeZone, from);
+      }
+    }
 
     return {
       thisWeek: {
@@ -27,5 +55,5 @@ export function useEventDates(day: DayOfWeek, timeZone?: string) {
         human: formatDateHuman(nextWeekDate),
       },
     };
-  }, [day, timeZone]);
+  }, [day, timeZone, endHour]);
 }

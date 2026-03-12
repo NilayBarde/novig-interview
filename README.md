@@ -5,7 +5,7 @@ A React single-page app for outdoor meetup organizers to compare this week's wea
 ## Features
 
 - **Week-over-week comparison** — Side-by-side weather cards for the same day, one week apart
-- **Hourly charts** — Temperature and precipitation probability plotted with synchronized Y-axes for honest visual comparison
+- **Hourly charts** — Temperature, rain probability, and wind speed in stacked metric panels with synchronized Y-axes for honest visual comparison
 - **Smart verdicts** — Human-friendly messages (temperature comfort, rain risk, wind conditions) with color-coded severity
 - **Comparison recommendation** — Automated "next week looks better" / "similar conditions" verdict using a weighted scoring heuristic
 - **Configurable event** — Choose day of week, time window (morning/afternoon/evening), and °F/°C display
@@ -75,27 +75,30 @@ src/
 
 ### Key Decisions
 
-1. **Single API call** — Fetches the full 15-day forecast once, slices client-side into "this week" and "next week." Halves API usage and provides atomic loading.
+1. **Stacked metric panels** — The PRD described a scrollable graph comparing weather metrics. A single combined chart with a hidden dual Y-axis (temperature left, rain right) would technically satisfy that but obscures rain values (readable only via tooltip), leaves wind entirely invisible, and misrepresents rain area height against the temperature scale. Instead: three stacked rows — Temperature, Rain Probability, Wind Speed — both weeks side-by-side per row. Each metric gets its own honest scale, wind becomes visible, and per-metric comparison is immediate. Page scroll covers the PRD's "scrollable" requirement without a custom scroll container.
 
-2. **`precipprob` over humidity** — Rain verdicts use the model-computed precipitation probability rather than raw humidity. Humidity of 25–75% doesn't reliably indicate rain.
+2. **Timezone awareness** — All date logic uses the IANA `timezone` string returned by the Visual Crossing API for the geocoded location, not the user's local browser timezone. "This Week" and "Next Week" dates, the "today already past" check, and the header's date display all reflect the event location's calendar — so a user in Sydney planning a New York meetup sees New York dates throughout.
 
-3. **Synchronized chart axes** — Both weekly charts share a computed min/max Y-axis domain so the visual comparison is honest (a 5° difference looks the same on both charts).
+3. **"Today already past" handling** — The PRD doesn't address this edge case, but the naive behaviour is wrong: selecting "Wednesday + Morning" on a Wednesday evening would show today's elapsed morning as "This Week." If the selected day is today and the time window's final hour has started (`currentHour >= endHour`), both dates advance by 7 days so users always see a future forecast.
 
-4. **Smart retry** — React Query retries network/server errors with exponential backoff but skips retries on 400 (invalid location) since those are deterministic failures.
+4. **`precipprob` over humidity** — The PRD specified humidity (25–75%) as the rain signal. Raw humidity is unreliable for that purpose — 80% humidity on a clear day is common. `precipprob` is the model-computed probability of measurable precipitation and is the right field for "will it rain?"
 
-5. **Peak precip probability** — Uses `max` (not `avg`) across hourly probabilities in the time window. If any hour has high rain risk, the organizer should know.
+5. **Peak precip probability** — Uses `max` (not `avg`) across hourly probabilities within the time window. If any single hour carries high rain risk, the organizer needs to know — averaging it away would understate the risk.
 
-6. **Timezone awareness** — Date calculations for "This Week" and "Next Week" ignore the user's local browser time and instead rely on the strict IANA `timezone` string returned by the Visual Crossing API for the geocoded location.
+6. **Single API call** — Fetches the full 15-day forecast once and slices it client-side for "this week" and "next week." Halves API usage vs. two targeted requests, gives atomic loading state, and makes the query cacheable for the full session.
 
-7. **Clean Query Cancellation** — The `LocationInput` utilizes a standard JS debounce, but slow external network requests are aggressively pruned via `AbortController` signals passed from React Query to the `fetch` API, neutralizing edge-case race conditions as the user types.
+7. **Day/time selectors as pill buttons** — The PRD left selector UX open. Pills show all options simultaneously (7 days, 4 time windows) with no click-to-open overhead, and naturally extend to multi-select if the product ever allows comparing multiple days. A dropdown adds friction with no benefit at this scale.
 
-8. **Keyboard Accessibility** — Day and time selectors use Tab + Enter/Space rather than the strict WAI-ARIA radiogroup arrow-key pattern. While the spec recommends roving `tabIndex` with arrow keys for `role="radiogroup"`, that pattern assumes traditional radio buttons. For small, visually distinct pill-style toggles, Tab-based navigation is more discoverable and intuitive — matching the approach used by Radix UI, shadcn/ui, and other modern design systems. All controls retain `role="radio"` and `aria-checked` for screen reader semantics.
+8. **Synchronized chart axes** — Both weekly temperature charts share a computed min/max Y-axis domain. A 5° difference looks the same on both charts — preventing the visual illusion of a larger gap on a chart with a narrower range.
 
-9. **Address Autocomplete** — Custom autocomplete built on the Mapbox Geocoding v6 REST API with debounced fetch, keyboard navigation, and full ARIA combobox semantics — no third-party UI components or shadow DOM overrides.
+9. **Address autocomplete** — Custom autocomplete on the Mapbox Geocoding v6 REST API with debounced fetch, keyboard navigation, and full ARIA combobox semantics. No third-party UI component was used to avoid shadow-DOM override complexity and keep full control over the interaction model.
 
-10. **Preference Persistence** — All user settings (location, day, time range, °F/°C) are persisted to `localStorage` and restored on page load, so the organizer doesn't need to reconfigure on every visit.
+10. **Preference persistence** — Location, day, time window, and both unit preferences are written to `localStorage` and restored on load. The organizer's recurring event shouldn't need to be re-entered on every visit.
 
-11. **Independent Unit Toggles** — Temperature (°F/°C) and wind speed (mph/km/h) have separate toggles, giving the organizer full control. All preferences including units are persisted to localStorage.
+11. **Smart retry** — React Query retries network and server errors with exponential backoff but skips retries on 400 responses (invalid location). Those are deterministic failures; retrying wastes time and quota.
+
+12. **Keyboard accessibility** — Day and time selectors use Tab + Enter/Space rather than the WAI-ARIA roving `tabIndex` arrow-key pattern. The arrow-key pattern is designed for traditional radio buttons; for small pill toggles it's less discoverable. All controls retain `role="radio"` and `aria-checked` for screen-reader semantics.
+
 
 ## API Key
 

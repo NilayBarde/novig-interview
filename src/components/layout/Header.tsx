@@ -1,6 +1,18 @@
 import { Sun } from 'lucide-react';
 
-export function Header() {
+interface HeaderProps {
+  /** IANA timezone of the selected location — when provided, "Today" reflects the location's calendar date */
+  timeZone?: string;
+}
+
+export function Header({ timeZone }: HeaderProps) {
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    ...(timeZone ? { timeZone } : {}),
+  });
+
   return (
     <header className="relative overflow-hidden">
       {/* Warm gradient backdrop */}
@@ -15,10 +27,15 @@ export function Header() {
               <Sun className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
             </div>
           </div>
-          <div>
-            <h1 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl text-sand-900 tracking-tight leading-none">
-              WeatherWeek
-            </h1>
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+              <h1 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl text-sand-900 tracking-tight leading-none">
+                WeatherWeek
+              </h1>
+              <span className="text-xs font-medium text-sand-400 sm:text-right">
+                Today — {today}
+              </span>
+            </div>
             <p className="mt-2 text-sand-500 text-sm sm:text-base font-medium max-w-md">
               Compare this week's forecast to next week — find the best day for your outdoor meetup.
             </p>

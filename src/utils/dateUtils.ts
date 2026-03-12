@@ -107,3 +107,44 @@ export function formatDateHuman(date: Date): string {
     day: 'numeric',
   });
 }
+
+/** Return today's date as YYYY-MM-DD in the given timezone (falls back to local). */
+export function getTodayFormatted(timeZone?: string): string {
+  const ymd = getYmdInTimeZone(new Date(), timeZone);
+  return `${ymd.year}-${String(ymd.month).padStart(2, '0')}-${String(ymd.day).padStart(2, '0')}`;
+}
+
+/** Return the current hour (0–23) in the given timezone (falls back to local). */
+export function getCurrentHourInTimeZone(timeZone?: string, now: Date = new Date()): number {
+  if (!timeZone) return now.getHours();
+
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: 'numeric',
+      hour12: false,
+    }).formatToParts(now);
+    const hourStr = parts.find((p) => p.type === 'hour')?.value ?? '';
+    const hour = parseInt(hourStr, 10);
+    // Intl can return 24 for midnight in hour12: false mode — normalise to 0
+    return Number.isFinite(hour) ? hour % 24 : now.getHours();
+  } catch {
+    return now.getHours();
+  }
+}
+
+/**
+ * Returns true if the given time window's final hour has started or passed
+ * in the event's timezone.
+ *
+ * Uses `>=` rather than `>`: once the clock reaches `endHour`, the last
+ * scheduled slot of the window has begun. Showing next week's forecast at
+ * that point is preferable to surfacing data from a window that's finishing up.
+ *
+ * @param endHour  - Inclusive end hour of the time window (e.g. 21 for 9 PM)
+ * @param timeZone - IANA timezone of the event location
+ * @param now      - Override for testability; defaults to current time
+ */
+export function isTimeWindowPast(endHour: number, timeZone?: string, now: Date = new Date()): boolean {
+  return getCurrentHourInTimeZone(timeZone, now) >= endHour;
+}

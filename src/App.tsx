@@ -20,10 +20,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <EventConfigProvider>
         <div className="min-h-screen">
-          <Header />
-          <PageContainer>
-            <WeatherDashboard />
-          </PageContainer>
+          <WeatherDashboard />
         </div>
       </EventConfigProvider>
     </QueryClientProvider>
@@ -32,48 +29,53 @@ function App() {
 
 function WeatherDashboard() {
   const { config, setLocation, setDay, setTimeRange, setTempUnit, setWindUnit } = useEventConfig();
-  const { comparison, isLoading, isFetching, error, refetch } = useWeatherForecast(
+  const { comparison, timeZone, isLoading, isFetching, error, refetch } = useWeatherForecast(
     config.location,
     config.day,
     config.timeRange
   );
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Controls */}
-      <div className="glass-warm rounded-2xl p-5 sm:p-6 shadow-lg shadow-sand-300/20 animate-fade-up space-y-5 relative z-10">
-        <LocationInput
-          onLocationChange={setLocation}
-          initialValue={config.location}
-          resolvedAddress={comparison?.resolvedAddress}
-          isLoading={isFetching}
-        />
-        <div className="flex flex-wrap items-end gap-5">
-          <DaySelector selectedDay={config.day} onDayChange={setDay} />
-          <TimeRangeSelector selectedRange={config.timeRange} onRangeChange={setTimeRange} />
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold uppercase tracking-widest text-sand-500">
-              Units
-            </label>
-            <div className="flex items-center gap-2">
-              <TempUnitToggle unit={config.tempUnit} onChange={setTempUnit} />
-              <WindUnitToggle unit={config.windUnit} onChange={setWindUnit} />
+    <>
+      <Header timeZone={timeZone} />
+      <PageContainer>
+        <div className="space-y-6 sm:space-y-8">
+          {/* Controls */}
+          <div className="glass-warm rounded-2xl p-5 sm:p-6 shadow-lg shadow-sand-300/20 animate-fade-up space-y-5 relative z-10">
+            <LocationInput
+              onLocationChange={setLocation}
+              initialValue={config.location}
+              resolvedAddress={comparison?.resolvedAddress}
+              isLoading={isFetching}
+            />
+            <div className="flex flex-wrap items-end gap-5">
+              <DaySelector selectedDay={config.day} onDayChange={setDay} />
+              <TimeRangeSelector selectedRange={config.timeRange} onRangeChange={setTimeRange} />
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold uppercase tracking-widest text-sand-500">
+                  Units
+                </label>
+                <div className="flex items-center gap-2">
+                  <TempUnitToggle unit={config.tempUnit} onChange={setTempUnit} />
+                  <WindUnitToggle unit={config.windUnit} onChange={setWindUnit} />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Content area */}
-      {error ? (
-        <ErrorState error={error} onRetry={refetch} />
-      ) : isLoading && config.location ? (
-        <LoadingState />
-      ) : comparison ? (
-        <WeatherComparison comparison={comparison} tempUnit={config.tempUnit} windUnit={config.windUnit} />
-      ) : (
-        <EmptyState />
-      )}
-    </div>
+          {/* Content area */}
+          {error ? (
+            <ErrorState error={error} onRetry={refetch} />
+          ) : isLoading && config.location ? (
+            <LoadingState />
+          ) : comparison ? (
+            <WeatherComparison comparison={comparison} tempUnit={config.tempUnit} windUnit={config.windUnit} />
+          ) : (
+            <EmptyState />
+          )}
+        </div>
+      </PageContainer>
+    </>
   );
 }
 

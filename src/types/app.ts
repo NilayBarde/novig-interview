@@ -52,6 +52,8 @@ export interface WeatherSummary {
   hourlyTemps: { hour: number; temp: number }[];
   /** Per-hour precipitation probability data for charting */
   hourlyPrecipProb: { hour: number; precipProb: number }[];
+  /** Per-hour wind speed data for charting (mph) */
+  hourlyWindSpeed: { hour: number; windSpeed: number }[];
 }
 
 /** Side-by-side comparison of two weekly forecasts */

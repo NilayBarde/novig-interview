@@ -102,6 +102,7 @@ function makeSummary(overrides: Partial<WeatherSummary>): WeatherSummary {
     humidity: 50,
     hourlyTemps: [],
     hourlyPrecipProb: [],
+    hourlyWindSpeed: [],
     ...overrides,
   };
 }

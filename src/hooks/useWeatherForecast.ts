@@ -32,7 +32,7 @@ export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: 
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
-  const dates = useEventDates(day, query.data?.timezone);
+  const dates = useEventDates(day, query.data?.timezone, timeRange);
 
   const comparison: ComparisonResult | null = (() => {
     if (!query.data) return null;
@@ -51,6 +51,8 @@ export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: 
 
   return {
     comparison,
+    /** IANA timezone of the resolved location, available once the first fetch completes */
+    timeZone: query.data?.timezone,
     isLoading: query.isLoading,
     /** True during background refetches (spinner in location input) */
     isFetching: query.isFetching,
@@ -70,6 +72,25 @@ function summarizeDay(day: DayData, dayLabel: string, timeRange: TimeRange): Wea
   });
 
   const hours = filteredHours.length > 0 ? filteredHours : day.hours;
+
+  // Guard against empty hours array (e.g. bad API data) to avoid ±Infinity
+  if (hours.length === 0) {
+    return {
+      date: day.datetime,
+      dayLabel,
+      avgTemp: 0,
+      highTemp: 0,
+      lowTemp: 0,
+      precipProb: 0,
+      avgWindSpeed: 0,
+      maxWindGust: 0,
+      conditions: day.conditions,
+      humidity: 0,
+      hourlyTemps: [],
+      hourlyPrecipProb: [],
+      hourlyWindSpeed: [],
+    };
+  }
 
   return {
     date: day.datetime,
@@ -91,6 +112,10 @@ function summarizeDay(day: DayData, dayLabel: string, timeRange: TimeRange): Wea
     hourlyPrecipProb: hours.map((h) => ({
       hour: parseInt(h.datetime.split(':')[0], 10),
       precipProb: h.precipprob,
+    })),
+    hourlyWindSpeed: hours.map((h) => ({
+      hour: parseInt(h.datetime.split(':')[0], 10),
+      windSpeed: h.windspeed,
     })),
   };
 }
