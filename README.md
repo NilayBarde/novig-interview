@@ -75,7 +75,7 @@ src/
 
 ### Key Decisions
 
-1. **Week navigator instead of side-by-side comparison** — The PRD sketch showed `< >` arrows labeled "skip back/forward by week," which implies a navigator pattern rather than a fixed two-panel layout. A single-panel view is cleaner on mobile, makes the per-week recommendation unambiguous (no cross-week banner needed), and naturally supports a third week when the API's 15-day window covers it. Next week's forecast is useful for planning ahead — communicating early so attendees know what to expect — not for cancellation decisions, since each weekly occurrence stands on its own.
+1. **Week navigator over side-by-side comparison** — Each weekly occurrence is independent: the organizer decides whether to run this week's event on its own merits, then separately decides the same for next week. There is no cross-week tradeoff to make. A week navigator keeps the focus on one event at a time, delivers an unambiguous per-week recommendation, and works cleanly on mobile without a cramped two-column layout. Next week's forecast is there for early communication — letting attendees know what to expect — not for comparison.
 
 2. **Action recommendation banner** — The organizer's primary question is "should I run this event?" The banner answers this directly above the detail cards, deriving context-aware copy from the actual forecast: caution tells them what to bring; warning tells them why to reconsider. Verdict rows in the card are simplified to plain condition descriptions ("Comfortable", "Rain likely") since the actionable advice lives in the banner.
 
