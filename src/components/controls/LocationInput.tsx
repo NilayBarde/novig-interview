@@ -11,6 +11,7 @@ interface Suggestion {
 
 interface LocationInputProps {
   onLocationChange: (location: string) => void;
+  initialValue?: string;
   resolvedAddress?: string;
   isLoading?: boolean;
 }
@@ -23,8 +24,8 @@ interface LocationInputProps {
  * can style everything with standard Tailwind classes — no shadow DOM,
  * no `!important` overrides.
  */
-export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: LocationInputProps) {
-  const [query, setQuery] = useState('');
+export function LocationInput({ onLocationChange, initialValue = '', resolvedAddress, isLoading }: LocationInputProps) {
+  const [query, setQuery] = useState(initialValue);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -74,7 +75,7 @@ export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: 
       );
 
       setSuggestions(results);
-      setIsOpen(results.length > 0);
+      setIsOpen(true);
       setActiveIndex(-1);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
@@ -241,6 +242,17 @@ export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: 
               </li>
             ))}
           </ul>
+        )}
+
+        {/* No results message */}
+        {isOpen && suggestions.length === 0 && query.trim().length >= 2 && !isFetchingSuggestions && (
+          <div
+            className="absolute top-full left-0 right-0 mt-2 py-3 px-4
+              bg-white rounded-xl border border-sand-200/60
+              shadow-lg shadow-sand-300/20 z-50"
+          >
+            <p className="text-sm text-sand-400">No locations found</p>
+          </div>
         )}
       </div>
 

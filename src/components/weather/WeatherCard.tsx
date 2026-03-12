@@ -1,8 +1,8 @@
 import { Thermometer, Droplets, Wind, Cloud } from 'lucide-react';
 import type { WeatherSummary } from '../../types/app';
-import type { TempUnit } from '../../config/constants';
+import type { TempUnit, WindUnit } from '../../config/constants';
 import { getAllVerdicts, getOverallSeverity } from '../../services/weatherMessages';
-import { displayTemp } from '../../utils/temperatureUtils';
+import { displayTemp, displayWindSpeed, windSpeedLabel } from '../../utils/temperatureUtils';
 import { WeatherMessage } from './WeatherMessage';
 
 const severityAccent = {
@@ -15,10 +15,11 @@ interface WeatherCardProps {
   summary: WeatherSummary;
   label: string;
   tempUnit: TempUnit;
+  windUnit: WindUnit;
   delay?: number;
 }
 
-export function WeatherCard({ summary, label, tempUnit, delay = 0 }: WeatherCardProps) {
+export function WeatherCard({ summary, label, tempUnit, windUnit, delay = 0 }: WeatherCardProps) {
   const verdicts = getAllVerdicts(summary);
   const severity = getOverallSeverity(verdicts);
 
@@ -30,25 +31,27 @@ export function WeatherCard({ summary, label, tempUnit, delay = 0 }: WeatherCard
       {/* Severity accent bar */}
       <div className={`h-1 bg-gradient-to-r ${severityAccent[severity]}`} />
 
-      <div className="p-5 sm:p-6">
+      <div className="p-5 space-y-4">
         {/* Header */}
-        <div className="flex items-baseline justify-between mb-5">
+        <div className="flex items-baseline justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-sand-400">{label}</p>
-            <p className="font-[family-name:var(--font-display)] text-lg text-sand-800 mt-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-sand-400 block">
+              {label}
+            </span>
+            <span className="font-[family-name:var(--font-display)] text-lg text-sand-800">
               {summary.dayLabel}
-            </p>
+            </span>
           </div>
           <div className="text-right">
-            <p className="font-[family-name:var(--font-display)] text-3xl text-sand-900 leading-none">
+            <span className="font-[family-name:var(--font-display)] text-4xl text-sand-800 leading-none">
               {displayTemp(summary.avgTemp, tempUnit)}°
-            </p>
-            <p className="text-xs text-sand-400 mt-1">avg</p>
+            </span>
+            <span className="text-xs text-sand-400 ml-0.5">avg</span>
           </div>
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
           <StatItem
             icon={<Thermometer className="w-3.5 h-3.5 text-ember-400" />}
             label="High / Low"
@@ -56,13 +59,13 @@ export function WeatherCard({ summary, label, tempUnit, delay = 0 }: WeatherCard
           />
           <StatItem
             icon={<Droplets className="w-3.5 h-3.5 text-sky-400" />}
-            label="Rain chance"
+            label="Rain Chance"
             value={`${Math.round(summary.precipProb)}%`}
           />
           <StatItem
             icon={<Wind className="w-3.5 h-3.5 text-sand-400" />}
             label="Wind"
-            value={`${Math.round(summary.avgWindSpeed)} mph`}
+            value={`${displayWindSpeed(summary.avgWindSpeed, windUnit)} ${windSpeedLabel(windUnit)}`}
           />
           <StatItem
             icon={<Cloud className="w-3.5 h-3.5 text-sand-400" />}

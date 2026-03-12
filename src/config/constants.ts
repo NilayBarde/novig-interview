@@ -23,6 +23,9 @@ export const DAYS_OF_WEEK = [
 
 export type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
 
+/** Wind speed display unit */
+export type WindUnit = 'mph' | 'kmh';
+
 /**
  * Selectable time windows for filtering hourly forecast data.
  * Each range defines a closed interval `[startHour, endHour]`.

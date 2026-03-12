@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import type { ComparisonResult } from '../../types/app';
-import type { TempUnit } from '../../config/constants';
+import type { TempUnit, WindUnit } from '../../config/constants';
 import { getComparisonVerdict } from '../../services/weatherMessages';
 import { displayTemp } from '../../utils/temperatureUtils';
 import { WeatherCard } from './WeatherCard';
@@ -10,9 +10,10 @@ import { WeatherMessage } from './WeatherMessage';
 interface WeatherComparisonProps {
   comparison: ComparisonResult;
   tempUnit: TempUnit;
+  windUnit: WindUnit;
 }
 
-export function WeatherComparison({ comparison, tempUnit }: WeatherComparisonProps) {
+export function WeatherComparison({ comparison, tempUnit, windUnit }: WeatherComparisonProps) {
   const { thisWeek, nextWeek } = comparison;
 
   // Synchronized Y-axis domain for honest visual comparison.
@@ -49,8 +50,8 @@ export function WeatherComparison({ comparison, tempUnit }: WeatherComparisonPro
 
       {/* Side-by-side cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-        <WeatherCard summary={thisWeek} label="This Week" tempUnit={tempUnit} delay={50} />
-        <WeatherCard summary={nextWeek} label="Next Week" tempUnit={tempUnit} delay={150} />
+        <WeatherCard summary={thisWeek} label="This Week" tempUnit={tempUnit} windUnit={windUnit} delay={50} />
+        <WeatherCard summary={nextWeek} label="Next Week" tempUnit={tempUnit} windUnit={windUnit} delay={150} />
       </div>
 
       {/* Side-by-side charts */}

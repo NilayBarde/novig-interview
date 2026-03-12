@@ -1,4 +1,4 @@
-import type { DayOfWeek, TimeRange, TempUnit } from '../config/constants';
+import type { DayOfWeek, TimeRange, TempUnit, WindUnit } from '../config/constants';
 
 /** User-configurable settings for the event being planned */
 export interface EventConfig {
@@ -10,6 +10,8 @@ export interface EventConfig {
   timeRange: TimeRange;
   /** Display unit for temperatures */
   tempUnit: TempUnit;
+  /** Display unit for wind speed */
+  windUnit: WindUnit;
 }
 
 /** Traffic-light severity for weather verdicts */

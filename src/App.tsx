@@ -7,6 +7,7 @@ import { LocationInput } from './components/controls/LocationInput';
 import { DaySelector } from './components/controls/DaySelector';
 import { TimeRangeSelector } from './components/controls/TimeRangeSelector';
 import { TempUnitToggle } from './components/controls/TempUnitToggle';
+import { WindUnitToggle } from './components/controls/WindUnitToggle';
 import { WeatherComparison } from './components/weather/WeatherComparison';
 import { LoadingState } from './components/common/LoadingState';
 import { ErrorState } from './components/common/ErrorState';
@@ -30,7 +31,7 @@ function App() {
 }
 
 function WeatherDashboard() {
-  const { config, setLocation, setDay, setTimeRange, setTempUnit } = useEventConfig();
+  const { config, setLocation, setDay, setTimeRange, setTempUnit, setWindUnit } = useEventConfig();
   const { comparison, isLoading, isFetching, error, refetch } = useWeatherForecast(
     config.location,
     config.day,
@@ -43,6 +44,7 @@ function WeatherDashboard() {
       <div className="glass-warm rounded-2xl p-5 sm:p-6 shadow-lg shadow-sand-300/20 animate-fade-up space-y-5 relative z-10">
         <LocationInput
           onLocationChange={setLocation}
+          initialValue={config.location}
           resolvedAddress={comparison?.resolvedAddress}
           isLoading={isFetching}
         />
@@ -53,7 +55,10 @@ function WeatherDashboard() {
             <label className="block text-xs font-semibold uppercase tracking-widest text-sand-500">
               Units
             </label>
-            <TempUnitToggle unit={config.tempUnit} onChange={setTempUnit} />
+            <div className="flex items-center gap-2">
+              <TempUnitToggle unit={config.tempUnit} onChange={setTempUnit} />
+              <WindUnitToggle unit={config.windUnit} onChange={setWindUnit} />
+            </div>
           </div>
         </div>
       </div>
@@ -64,7 +69,7 @@ function WeatherDashboard() {
       ) : isLoading && config.location ? (
         <LoadingState />
       ) : comparison ? (
-        <WeatherComparison comparison={comparison} tempUnit={config.tempUnit} />
+        <WeatherComparison comparison={comparison} tempUnit={config.tempUnit} windUnit={config.windUnit} />
       ) : (
         <EmptyState />
       )}

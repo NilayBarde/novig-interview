@@ -93,6 +93,10 @@ src/
 
 9. **Address Autocomplete** — Custom autocomplete built on the Mapbox Geocoding v6 REST API with debounced fetch, keyboard navigation, and full ARIA combobox semantics — no third-party UI components or shadow DOM overrides.
 
+10. **Preference Persistence** — All user settings (location, day, time range, °F/°C) are persisted to `localStorage` and restored on page load, so the organizer doesn't need to reconfigure on every visit.
+
+11. **Independent Unit Toggles** — Temperature (°F/°C) and wind speed (mph/km/h) have separate toggles, giving the organizer full control. All preferences including units are persisted to localStorage.
+
 ## API Key
 
 The API key is bundled into the client (via `VITE_` prefix) — acceptable for a prototype. A production app would proxy requests through a serverless function.
