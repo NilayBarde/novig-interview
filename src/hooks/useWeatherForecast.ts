@@ -61,12 +61,23 @@ export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: 
 }
 
 /**
+ * Parse the hour from a Visual Crossing hourly datetime string.
+ * The API returns "HH:mm:ss" (e.g. "14:00:00"). We split on ":" and parse
+ * the first segment as base-10. Returns -1 on malformed input so the
+ * caller's range filter safely excludes it (no valid hour is -1).
+ */
+function parseHour(datetime: string): number {
+  const hour = parseInt(datetime.split(':')[0], 10);
+  return Number.isNaN(hour) ? -1 : hour;
+}
+
+/**
  * Extract and aggregate hourly data for a single day within the given time range.
  * Falls back to all 24 hours if the filtered window is empty.
  */
 function summarizeDay(day: DayData, dayLabel: string, timeRange: TimeRange): WeatherSummary {
   const filteredHours = day.hours.filter((h) => {
-    const hour = parseInt(h.datetime.split(':')[0], 10);
+    const hour = parseHour(h.datetime);
     return hour >= timeRange.startHour && hour <= timeRange.endHour;
   });
 
@@ -105,15 +116,15 @@ function summarizeDay(day: DayData, dayLabel: string, timeRange: TimeRange): Wea
     conditions: day.conditions,
     humidity: avg(hours.map((h) => h.humidity)),
     hourlyTemps: hours.map((h) => ({
-      hour: parseInt(h.datetime.split(':')[0], 10),
+      hour: parseHour(h.datetime),
       temp: h.temp,
     })),
     hourlyPrecipProb: hours.map((h) => ({
-      hour: parseInt(h.datetime.split(':')[0], 10),
+      hour: parseHour(h.datetime),
       precipProb: h.precipprob,
     })),
     hourlyWindSpeed: hours.map((h) => ({
-      hour: parseInt(h.datetime.split(':')[0], 10),
+      hour: parseHour(h.datetime),
       windSpeed: h.windspeed,
     })),
   };

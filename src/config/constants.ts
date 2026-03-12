@@ -39,7 +39,12 @@ export const TIME_RANGES = [
 
 export type TimeRange = (typeof TIME_RANGES)[number];
 
-/** Temperature thresholds in °F for weather verdict messages */
+/**
+ * Temperature thresholds in °F for weather verdict messages.
+ * The 60–75°F "nice day" band comes directly from the product spec.
+ * The broader COLD/COOL and WARM/HOT cutoffs follow NOAA's general
+ * outdoor thermal-comfort guidance for recreational activities.
+ */
 export const TEMP_THRESHOLDS = {
   COLD: 50,
   COOL: 60,
@@ -47,16 +52,39 @@ export const TEMP_THRESHOLDS = {
   WARM_MAX: 85,
 } as const;
 
-/** Precipitation probability thresholds (0–100%) */
+/**
+ * Precipitation probability thresholds (0–100%).
+ * Aligned with NWS Probability of Precipitation (PoP) terminology:
+ * "slight chance" tops out near 30%, "likely" begins near 70%.
+ */
 export const PRECIP_THRESHOLDS = {
   LOW: 30,
   HIGH: 70,
 } as const;
 
-/** Wind speed thresholds in mph */
+/**
+ * Wind speed thresholds in mph, derived from the Beaufort Wind Scale.
+ * 15 mph ≈ Beaufort 3 (gentle breeze — noticeable but comfortable).
+ * 25 mph ≈ Beaufort 5 (fresh breeze — loose items need securing).
+ */
 export const WIND_THRESHOLDS = {
   BREEZY: 15,
   WINDY: 25,
+} as const;
+
+/**
+ * Comparison score difference thresholds for the week-vs-week verdict.
+ *
+ * The scoring heuristic (`computeWeatherScore`) produces a 0–5 scale.
+ * Max score is 7 (temp 2 + precip 3 + wind 1 + wind-bonus 1).
+ * Precipitation is weighted highest (3 pts) because rain is the primary
+ * reason an outdoor meetup gets cancelled — per the user story.
+ * SIGNIFICANT = ~28% of max (2/7): two metrics clearly improved.
+ * SLIGHT = ~10% of max (0.75/7): one meaningful metric improved.
+ */
+export const COMPARISON_THRESHOLDS = {
+  SIGNIFICANT: 2.0,
+  SLIGHT: 0.75,
 } as const;
 
 /** User-selectable temperature display unit */

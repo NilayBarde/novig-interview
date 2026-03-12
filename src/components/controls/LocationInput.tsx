@@ -30,6 +30,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,6 +48,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
     abortRef.current?.abort();
     abortRef.current = new AbortController();
 
+    setFetchError(false);
     setIsFetchingSuggestions(true);
 
     try {
@@ -63,7 +65,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
         { signal: abortRef.current.signal },
       );
 
-      if (!res.ok) return;
+      if (!res.ok) throw new Error(`Mapbox returned ${res.status}`);
 
       const data = await res.json();
       const results: Suggestion[] = (data.features || []).map(
@@ -79,7 +81,10 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
       setActiveIndex(-1);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
-      // Silently fail — the user can still type a plain location
+      // API unreachable — show an error state so the user knows it's a network
+      // issue, not a genuine no-results. They can still type a plain location.
+      setFetchError(true);
+      setIsOpen(true);
     } finally {
       setIsFetchingSuggestions(false);
     }
@@ -102,6 +107,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
       setQuery(suggestion.fullAddress);
       setSuggestions([]);
       setIsOpen(false);
+      setFetchError(false);
       onLocationChange(suggestion.fullAddress);
     },
     [onLocationChange],
@@ -133,6 +139,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
         case 'Escape':
           setIsOpen(false);
           setActiveIndex(-1);
+          setFetchError(false);
           break;
       }
     },
@@ -144,6 +151,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
     const handleClickOutside = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsOpen(false);
+        setFetchError(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -244,14 +252,18 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
           </ul>
         )}
 
-        {/* No results message */}
+        {/* No results / fetch error message */}
         {isOpen && suggestions.length === 0 && query.trim().length >= 2 && !isFetchingSuggestions && (
           <div
             className="absolute top-full left-0 right-0 mt-2 py-3 px-4
               bg-white rounded-xl border border-sand-200/60
               shadow-lg shadow-sand-300/20 z-50"
           >
-            <p className="text-sm text-sand-400">No locations found</p>
+            {fetchError ? (
+              <p className="text-sm text-ember-500">Could not reach location service — you can still type a location manually</p>
+            ) : (
+              <p className="text-sm text-sand-400">No locations found</p>
+            )}
           </div>
         )}
       </div>

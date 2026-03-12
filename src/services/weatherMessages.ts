@@ -7,7 +7,7 @@
  * All threshold constants are defined in `config/constants.ts`.
  */
 
-import { TEMP_THRESHOLDS, PRECIP_THRESHOLDS, WIND_THRESHOLDS } from '../config/constants';
+import { TEMP_THRESHOLDS, PRECIP_THRESHOLDS, WIND_THRESHOLDS, COMPARISON_THRESHOLDS } from '../config/constants';
 import type { WeatherVerdict, WeatherSummary, Severity } from '../types/app';
 
 /**
@@ -42,9 +42,9 @@ export function getRainVerdict(precipProb: number): WeatherVerdict {
     return { message: 'No rain expected', severity: 'good' };
   }
   if (precipProb < PRECIP_THRESHOLDS.HIGH) {
-    return { message: 'Chance of rain — have a backup plan', severity: 'caution' };
+    return { message: 'Chance of rain — pack accordingly', severity: 'caution' };
   }
-  return { message: 'Rain likely — consider rescheduling', severity: 'warning' };
+  return { message: 'Rain likely — bring gear or consider rescheduling', severity: 'warning' };
 }
 
 /** Classify wind conditions for outdoor comfort */
@@ -71,39 +71,51 @@ export function getComparisonVerdict(
   const nextScore = computeWeatherScore(nextWeek);
   const diff = nextScore - thisScore;
 
-  if (diff > 1.5) {
+  if (diff > COMPARISON_THRESHOLDS.SIGNIFICANT) {
     return { message: 'Next week looks significantly better', severity: 'good' };
   }
-  if (diff > 0.5) {
+  if (diff > COMPARISON_THRESHOLDS.SLIGHT) {
     return { message: 'Next week looks a bit better', severity: 'good' };
   }
-  if (diff < -1.5) {
+  if (diff < -COMPARISON_THRESHOLDS.SIGNIFICANT) {
     return { message: 'This week is significantly better', severity: 'warning' };
   }
-  if (diff < -0.5) {
+  if (diff < -COMPARISON_THRESHOLDS.SLIGHT) {
     return { message: 'This week looks a bit better', severity: 'caution' };
   }
-  return { message: 'Both weeks look similar', severity: 'good' };
+  // Weeks are similar — derive severity from the actual individual verdicts
+  // (same logic the cards use) so the banner is consistent with what the
+  // organizer is already reading. If either week has a 'warning' verdict
+  // (e.g. 100% rain chance), the banner should not be green.
+  const combinedSeverity = getOverallSeverity([
+    ...getAllVerdicts(thisWeek),
+    ...getAllVerdicts(nextWeek),
+  ]);
+  return { message: 'Both weeks look similar', severity: combinedSeverity };
 }
 
 /**
- * Score a day's weather from 0 (worst) to 5 (best) for outdoor suitability.
+ * Score a day's weather from 0 (worst) to 7 (best) for outdoor suitability.
  *
- * Scoring breakdown:
- * - Temperature: +2 if 60–75°F (ideal), +1 if 50–85°F (tolerable)
- * - Precipitation: +2 if <30% chance, +1 if <70%
- * - Wind: +1 if <15 mph
+ * Precipitation is weighted highest because rain is the primary cancellation
+ * reason for outdoor meetups — per the user story. A temperature improvement
+ * alone should not be able to fully offset a significantly worse rain outlook.
+ *
+ * Scoring breakdown (thresholds from constants.ts):
+ * - Temperature: +2 if COOL–NICE_MAX (ideal), +1 if COLD–WARM_MAX (tolerable)
+ * - Precipitation: +3 if <LOW (no rain), +2 if <HIGH (chance of rain)
+ * - Wind: +1 if <BREEZY
  */
 function computeWeatherScore(summary: WeatherSummary): number {
   let score = 0;
 
-  if (summary.avgTemp >= 60 && summary.avgTemp <= 75) score += 2;
-  else if (summary.avgTemp >= 50 && summary.avgTemp <= 85) score += 1;
+  if (summary.avgTemp >= TEMP_THRESHOLDS.COOL && summary.avgTemp <= TEMP_THRESHOLDS.NICE_MAX) score += 2;
+  else if (summary.avgTemp >= TEMP_THRESHOLDS.COLD && summary.avgTemp <= TEMP_THRESHOLDS.WARM_MAX) score += 1;
 
-  if (summary.precipProb < 30) score += 2;
-  else if (summary.precipProb < 70) score += 1;
+  if (summary.precipProb < PRECIP_THRESHOLDS.LOW) score += 3;
+  else if (summary.precipProb < PRECIP_THRESHOLDS.HIGH) score += 2;
 
-  if (summary.avgWindSpeed < 15) score += 1;
+  if (summary.avgWindSpeed < WIND_THRESHOLDS.BREEZY) score += 1;
 
   return score;
 }
