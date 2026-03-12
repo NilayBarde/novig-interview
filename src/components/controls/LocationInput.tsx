@@ -106,32 +106,28 @@ export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: 
     [onLocationChange],
   );
 
-  // Keyboard navigation + Enter-to-submit
+  // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (isOpen && activeIndex >= 0 && activeIndex < suggestions.length) {
-          // Select the highlighted suggestion
-          handleSelect(suggestions[activeIndex]);
-        } else if (query.trim().length > 0) {
-          // Submit the raw text (works for zip codes, free-text locations, etc.)
-          setIsOpen(false);
-          onLocationChange(query.trim());
-        }
-        return;
-      }
-
       if (!isOpen) return;
 
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setActiveIndex((prev) => Math.min(prev + 1, suggestions.length - 1));
+          setActiveIndex((prev) => (prev + 1) % suggestions.length);
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setActiveIndex((prev) => Math.max(prev - 1, 0));
+          setActiveIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+          break;
+        case 'Enter':
+          e.preventDefault();
+          {
+            const idx = activeIndex >= 0 ? activeIndex : 0;
+            if (idx < suggestions.length) {
+              handleSelect(suggestions[idx]);
+            }
+          }
           break;
         case 'Escape':
           setIsOpen(false);
@@ -139,7 +135,7 @@ export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: 
           break;
       }
     },
-    [isOpen, activeIndex, suggestions, handleSelect, query, onLocationChange],
+    [isOpen, activeIndex, suggestions, handleSelect],
   );
 
   // Click outside to close
@@ -159,6 +155,13 @@ export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: 
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  // Scroll the highlighted suggestion into view
+  useEffect(() => {
+    if (activeIndex >= 0) {
+      document.getElementById(`suggestion-${activeIndex}`)?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [activeIndex]);
 
   return (
     <div className="space-y-2 relative z-50">
