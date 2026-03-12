@@ -75,7 +75,7 @@ src/
 
 ### Key Decisions
 
-1. **Week navigator instead of side-by-side comparison** — The PRD sketch showed `< >` arrows labeled "skip back/forward by week," which implies a navigator pattern rather than a fixed two-panel layout. A single-panel view is cleaner on mobile, makes the per-week recommendation unambiguous (no cross-week banner needed), and naturally supports a third week when the API's 15-day window covers it.
+1. **Week navigator instead of side-by-side comparison** — The PRD sketch showed `< >` arrows labeled "skip back/forward by week," which implies a navigator pattern rather than a fixed two-panel layout. A single-panel view is cleaner on mobile, makes the per-week recommendation unambiguous (no cross-week banner needed), and naturally supports a third week when the API's 15-day window covers it. Next week's forecast is useful for planning ahead — communicating early so attendees know what to expect — not for cancellation decisions, since each weekly occurrence stands on its own.
 
 2. **Action recommendation banner** — The organizer's primary question is "should I run this event?" The banner answers this directly above the detail cards, deriving context-aware copy from the actual forecast: caution tells them what to bring; warning tells them why to reconsider. Verdict rows in the card are simplified to plain condition descriptions ("Comfortable", "Rain likely") since the actionable advice lives in the banner.
 
@@ -87,7 +87,7 @@ src/
 
 6. **`precipprob` over humidity** — The PRD specified humidity (25–75%) as the rain signal. Raw humidity is unreliable — 80% humidity on a clear day is common. `precipprob` is the model-computed probability of measurable precipitation and is the correct field for "will it rain?"
 
-7. **Peak precip probability** — Uses `max` (not `avg`) across hourly probabilities within the time window. If any single hour carries high rain risk, the organizer needs to know — averaging it away would understate the risk.
+7. **Peak precip probability** — Uses `max` (not `avg`) across hourly probabilities within the time window. If any single hour carries high rain risk, the organizer needs to know — averaging it away would understate the risk. A future improvement would factor in `precip` (actual expected accumulation in inches) alongside `precipprob` — a 90% chance of a light drizzle is meaningfully different from a 90% chance of heavy rain for an outdoor event.
 
 8. **Single API call** — Fetches the full 15-day forecast once and slices it client-side for each week offset. Minimizes API usage, gives atomic loading state, and makes the result cacheable for the full session. `weekOffset` is intentionally excluded from the React Query key.
 

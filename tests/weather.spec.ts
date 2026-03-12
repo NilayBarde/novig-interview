@@ -85,10 +85,14 @@ test('WeatherWeek Core Flow', async ({ page }) => {
   // Wait for the "Found: San Francisco, CA" to appear indicating API success
   await expect(page.getByText(/Found: .*/)).toBeVisible();
 
-  // Verify that both "This Week" and "Next Week" weather cards are rendered
+  // Verify the week navigator is rendered showing "This Week"
   await expect(page.getByText('This Week').first()).toBeVisible();
-  await expect(page.getByText('Next Week').first()).toBeVisible();
 
-  // Verify the recommendation verdict logic fires (e.g. "Both weeks look similar" since our mock data is identical)
-  await expect(page.getByText('Both weeks look similar')).toBeVisible();
+  // Verify the recommendation banner fires with the correct verdict for the mock data
+  // (65°F comfortable, 10% rain, 5mph calm winds → all good)
+  await expect(page.getByText('All good — enjoy the event')).toBeVisible();
+
+  // Verify navigation to next week works
+  await page.getByLabel('Next week').click();
+  await expect(page.getByText('Next Week').first()).toBeVisible();
 });
