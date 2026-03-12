@@ -106,9 +106,22 @@ export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: 
     [onLocationChange],
   );
 
-  // Keyboard navigation
+  // Keyboard navigation + Enter-to-submit
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (isOpen && activeIndex >= 0 && activeIndex < suggestions.length) {
+          // Select the highlighted suggestion
+          handleSelect(suggestions[activeIndex]);
+        } else if (query.trim().length > 0) {
+          // Submit the raw text (works for zip codes, free-text locations, etc.)
+          setIsOpen(false);
+          onLocationChange(query.trim());
+        }
+        return;
+      }
+
       if (!isOpen) return;
 
       switch (e.key) {
@@ -120,19 +133,13 @@ export function LocationInput({ onLocationChange, resolvedAddress, isLoading }: 
           e.preventDefault();
           setActiveIndex((prev) => Math.max(prev - 1, 0));
           break;
-        case 'Enter':
-          e.preventDefault();
-          if (activeIndex >= 0 && activeIndex < suggestions.length) {
-            handleSelect(suggestions[activeIndex]);
-          }
-          break;
         case 'Escape':
           setIsOpen(false);
           setActiveIndex(-1);
           break;
       }
     },
-    [isOpen, activeIndex, suggestions, handleSelect],
+    [isOpen, activeIndex, suggestions, handleSelect, query, onLocationChange],
   );
 
   // Click outside to close
