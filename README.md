@@ -17,7 +17,7 @@ A React single-page app for outdoor meetup organizers to compare this week's wea
 
 | Layer | Choice |
 |-------|--------|
-| Build | Vite + React 18 |
+| Build | Vite + React 19 |
 | Language | TypeScript (strict mode) |
 | Styling | Tailwind CSS 4 |
 | Charting | Recharts |
@@ -99,7 +99,9 @@ src/
 
 12. **Location-aware date near controls** — Once a location resolves, a line like "Los Angeles — Wednesday, Mar 11" appears between the location input and the day/time selectors. It uses the event location's IANA timezone so the date reflects the event location's calendar day, not the browser's. A user in New York planning a Los Angeles event sees Wednesday, Mar 11 even though their local date is Thursday — directly explaining why the forecast is anchored to Wednesday. The header date intentionally stays as browser local time (no timezone attribution there; switching it silently would confuse users).
 
-13. **Keyboard accessibility** — Day and time selectors use Tab + Enter/Space rather than the WAI-ARIA roving `tabIndex` arrow-key pattern. The arrow-key pattern is designed for traditional radio buttons; for small pill toggles it's less discoverable. All controls retain `role="radio"` and `aria-checked` for screen-reader semantics.
+13. **Precipitation outweighs temperature in scoring** — The week-over-week comparison uses a 0–7 scoring heuristic. Precipitation is weighted 3 pts (no rain) / 2 pts (chance of rain) vs. temperature's 2 pts (ideal) / 1 pt (tolerable). The user story says "we'll often cancel if it's too wet" — rain is the primary cancellation reason, so a better temperature should not be able to fully offset a significantly worse rain outlook. The "both weeks look similar" banner also derives its color from the actual per-metric verdicts rather than the score alone, so equally bad conditions (e.g. 90%+ rain both weeks) never show a green banner.
+
+14. **Keyboard accessibility** — Day and time selectors use Tab + Enter/Space rather than the WAI-ARIA roving `tabIndex` arrow-key pattern. The arrow-key pattern is designed for traditional radio buttons; for small pill toggles it's less discoverable. All controls retain `role="radio"` and `aria-checked` for screen-reader semantics.
 
 
 ## API Key
