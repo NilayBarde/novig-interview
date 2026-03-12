@@ -40,7 +40,7 @@ function WeatherDashboard() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* Controls */}
-      <div className="glass-warm rounded-2xl p-5 sm:p-6 shadow-lg shadow-sand-300/20 animate-fade-up space-y-5">
+      <div className="glass-warm rounded-2xl p-5 sm:p-6 shadow-lg shadow-sand-300/20 animate-fade-up space-y-5 relative z-10">
         <LocationInput
           onLocationChange={setLocation}
           resolvedAddress={comparison?.resolvedAddress}

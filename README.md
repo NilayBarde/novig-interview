@@ -23,7 +23,7 @@ A React single-page app for outdoor meetup organizers to compare this week's wea
 | Charting | Recharts |
 | Data Fetching | TanStack Query v5 |
 | Icons | Lucide React |
-| Testing | Vitest |
+| Testing | Vitest + Playwright |
 
 ## Getting Started
 
@@ -45,8 +45,9 @@ npm run dev
 |---------|-------------|
 | `npm run dev` | Start development server |
 | `npm run build` | TypeScript check + production build |
-| `npm run test` | Run unit tests |
+| `npm run test` | Run unit tests with Vitest |
 | `npm run test:watch` | Run tests in watch mode |
+| `npm run test:e2e` | Run Playwright E2E browser tests |
 | `npm run lint` | Lint with ESLint |
 
 ## Architecture
@@ -83,6 +84,14 @@ src/
 4. **Smart retry** — React Query retries network/server errors with exponential backoff but skips retries on 400 (invalid location) since those are deterministic failures.
 
 5. **Peak precip probability** — Uses `max` (not `avg`) across hourly probabilities in the time window. If any hour has high rain risk, the organizer should know.
+
+6. **Timezone awareness** — Date calculations for "This Week" and "Next Week" ignore the user's local browser time and instead rely on the strict IANA `timezone` string returned by the Visual Crossing API for the geocoded location.
+
+7. **Clean Query Cancellation** — The `LocationInput` utilizes a standard JS debounce, but slow external network requests are aggressively pruned via `AbortController` signals passed from React Query to the `fetch` API, neutralizing edge-case race conditions as the user types.
+
+8. **Semantic Accessibility** — Custom UI radio-button clusters (like `DaySelector`) utilize explicit `role="radiogroup"` / `role="radio"` attributes and support standard keyboard arrow navigation for screen readers.
+
+9. **Address Autocomplete** — Custom autocomplete built on the Mapbox Geocoding v6 REST API with debounced fetch, keyboard navigation, and full ARIA combobox semantics — no third-party UI components or shadow DOM overrides.
 
 ## API Key
 

@@ -8,10 +8,10 @@ import { getNextDayOfWeek, getFollowingWeekDay, formatDate, formatDateHuman } fr
  * Returns both machine-readable (YYYY-MM-DD) and human-readable formats,
  * memoized so downstream hooks don't re-run unnecessarily.
  */
-export function useEventDates(day: DayOfWeek) {
+export function useEventDates(day: DayOfWeek, timeZone?: string) {
   return useMemo(() => {
-    const thisWeekDate = getNextDayOfWeek(day);
-    const nextWeekDate = getFollowingWeekDay(day);
+    const thisWeekDate = getNextDayOfWeek(day, timeZone);
+    const nextWeekDate = getFollowingWeekDay(day, timeZone);
 
     return {
       thisWeek: {
@@ -27,5 +27,5 @@ export function useEventDates(day: DayOfWeek) {
         human: formatDateHuman(nextWeekDate),
       },
     };
-  }, [day]);
+  }, [day, timeZone]);
 }

@@ -9,9 +9,10 @@ import type { WeatherResponse, WeatherApiError } from '../types/weather';
  * atomic loading for both weeks.
  *
  * @param location - Free-text location (city name, address, or zip code)
+ * @param signal - Optional AbortSignal from React Query for cancellation
  * @throws {WeatherApiError} Typed error for invalid location, rate limit, or network failures
  */
-export async function fetchWeatherForecast(location: string): Promise<WeatherResponse> {
+export async function fetchWeatherForecast(location: string, signal?: AbortSignal): Promise<WeatherResponse> {
   if (!VISUAL_CROSSING_API_KEY) {
     throw createError('unknown', 'Missing API key. Set VITE_WEATHER_API_KEY in .env');
   }
@@ -21,8 +22,11 @@ export async function fetchWeatherForecast(location: string): Promise<WeatherRes
 
   let response: Response;
   try {
-    response = await fetch(url);
-  } catch {
+    response = await fetch(url, { signal });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw err; // Let React Query handle the cancellation nicely
+    }
     throw createError('network', 'Unable to connect. Check your internet connection and try again.');
   }
 

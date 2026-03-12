@@ -5,28 +5,28 @@ describe('getNextDayOfWeek', () => {
   it('returns today when today IS the target day', () => {
     // Wednesday, March 11, 2026
     const wednesday = new Date(2026, 2, 11);
-    const result = getNextDayOfWeek('Wednesday', wednesday);
+    const result = getNextDayOfWeek('Wednesday', undefined, wednesday);
     expect(formatDate(result)).toBe('2026-03-11');
   });
 
   it('returns the next occurrence when target is later this week', () => {
     // Wednesday March 11 → Saturday March 14
     const wednesday = new Date(2026, 2, 11);
-    const result = getNextDayOfWeek('Saturday', wednesday);
+    const result = getNextDayOfWeek('Saturday', undefined, wednesday);
     expect(formatDate(result)).toBe('2026-03-14');
   });
 
   it('wraps to next week when target day has passed', () => {
     // Wednesday March 11 → Monday March 16
     const wednesday = new Date(2026, 2, 11);
-    const result = getNextDayOfWeek('Monday', wednesday);
+    const result = getNextDayOfWeek('Monday', undefined, wednesday);
     expect(formatDate(result)).toBe('2026-03-16');
   });
 
   it('handles Sunday (index 0) correctly from Saturday', () => {
     // Saturday March 14 → Sunday March 15
     const saturday = new Date(2026, 2, 14);
-    const result = getNextDayOfWeek('Sunday', saturday);
+    const result = getNextDayOfWeek('Sunday', undefined, saturday);
     expect(formatDate(result)).toBe('2026-03-15');
   });
 });
@@ -34,14 +34,14 @@ describe('getNextDayOfWeek', () => {
 describe('getFollowingWeekDay', () => {
   it('returns 7 days after the next occurrence', () => {
     const wednesday = new Date(2026, 2, 11);
-    const result = getFollowingWeekDay('Saturday', wednesday);
+    const result = getFollowingWeekDay('Saturday', undefined, wednesday);
     // Next Saturday = March 14, following = March 21
     expect(formatDate(result)).toBe('2026-03-21');
   });
 
   it('handles when today is the target day', () => {
     const wednesday = new Date(2026, 2, 11);
-    const result = getFollowingWeekDay('Wednesday', wednesday);
+    const result = getFollowingWeekDay('Wednesday', undefined, wednesday);
     // Next Wednesday = March 11 (today), following = March 18
     expect(formatDate(result)).toBe('2026-03-18');
   });

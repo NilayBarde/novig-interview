@@ -9,16 +9,34 @@ interface DaySelectorProps {
 export function DaySelector({ selectedDay, onDayChange }: DaySelectorProps) {
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-semibold uppercase tracking-widest text-sand-500">
+      <label id="day-selector-label" className="block text-xs font-semibold uppercase tracking-widest text-sand-500">
         Day of Week
       </label>
-      <div className="flex flex-wrap gap-1.5">
+      <div
+        role="radiogroup"
+        aria-labelledby="day-selector-label"
+        className="flex flex-wrap gap-1.5"
+      >
         {DAYS_OF_WEEK.map((day) => {
           const isActive = day === selectedDay;
           return (
             <button
               key={day}
+              role="radio"
+              aria-checked={isActive}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => onDayChange(day)}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  const nextIndex = (DAYS_OF_WEEK.indexOf(day) + 1) % DAYS_OF_WEEK.length;
+                  onDayChange(DAYS_OF_WEEK[nextIndex]);
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  const prevIndex = (DAYS_OF_WEEK.indexOf(day) - 1 + DAYS_OF_WEEK.length) % DAYS_OF_WEEK.length;
+                  onDayChange(DAYS_OF_WEEK[prevIndex]);
+                }
+              }}
               className={`
                 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
                 cursor-pointer border-none

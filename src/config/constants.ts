@@ -1,12 +1,14 @@
-/** Visual Crossing Timeline API base URL */
+// Environment configs
+export const VISUAL_CROSSING_API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
 export const VISUAL_CROSSING_BASE_URL =
   'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline';
+
+export const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
 /**
  * API key is exposed client-side for this prototype.
  * In production, proxy through a serverless function to protect the key.
  */
-export const VISUAL_CROSSING_API_KEY = import.meta.env.VITE_WEATHER_API_KEY as string;
 
 /** Days of the week, indexed to match `Date.getDay()` (0 = Sunday) */
 export const DAYS_OF_WEEK = [
@@ -26,9 +28,9 @@ export type DayOfWeek = (typeof DAYS_OF_WEEK)[number];
  * Each range defines a closed interval `[startHour, endHour]`.
  */
 export const TIME_RANGES = [
-  { label: 'Morning (6am–12pm)', shortLabel: 'Morning', startHour: 6, endHour: 12 },
-  { label: 'Afternoon (12pm–5pm)', shortLabel: 'Afternoon', startHour: 12, endHour: 17 },
-  { label: 'Evening (5pm–9pm)', shortLabel: 'Evening', startHour: 17, endHour: 21 },
+  { label: 'Morning (6am-12pm)', shortLabel: 'Morning', startHour: 6, endHour: 12 },
+  { label: 'Afternoon (12pm-5pm)', shortLabel: 'Afternoon', startHour: 12, endHour: 17 },
+  { label: 'Evening (5pm-9pm)', shortLabel: 'Evening', startHour: 17, endHour: 21 },
   { label: 'All Day', shortLabel: 'All Day', startHour: 6, endHour: 21 },
 ] as const;
 

@@ -18,11 +18,9 @@ import type { DayData } from '../types/weather';
  * @param timeRange - Hourly window to focus on
  */
 export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: TimeRange) {
-  const dates = useEventDates(day);
-
   const query = useQuery({
     queryKey: ['weather', location],
-    queryFn: () => fetchWeatherForecast(location),
+    queryFn: ({ signal }) => fetchWeatherForecast(location, signal),
     enabled: location.trim().length > 0,
     staleTime: QUERY_STALE_TIME,
     gcTime: QUERY_GC_TIME,
@@ -33,6 +31,8 @@ export function useWeatherForecast(location: string, day: DayOfWeek, timeRange: 
     },
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
+
+  const dates = useEventDates(day, query.data?.timezone);
 
   const comparison: ComparisonResult | null = (() => {
     if (!query.data) return null;
