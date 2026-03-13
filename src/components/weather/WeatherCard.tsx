@@ -25,6 +25,7 @@ export function WeatherCard({ summary, label, tempUnit, windUnit, delay = 0 }: W
 
   return (
     <div
+      aria-label={`${label} weather details`}
       className="glass-warm rounded-2xl overflow-hidden shadow-lg shadow-sand-300/20 animate-fade-up"
       style={{ animationDelay: `${delay}ms` }}
     >

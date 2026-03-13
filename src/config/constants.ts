@@ -3,8 +3,6 @@ export const VISUAL_CROSSING_API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
 export const VISUAL_CROSSING_BASE_URL =
   'https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline';
 
-export const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-
 /**
  * API key is exposed client-side for this prototype.
  * In production, proxy through a serverless function to protect the key.

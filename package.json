@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest run --watch",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:all": "PW_BROWSERS=all playwright test"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",

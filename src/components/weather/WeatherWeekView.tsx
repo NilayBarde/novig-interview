@@ -53,7 +53,7 @@ export function WeatherWeekView({ label, forecast, tempUnit, windUnit, tempDomai
       </div>
 
       {/* Action recommendation */}
-      <RecommendationBanner forecast={forecast} />
+      <RecommendationBanner forecast={forecast} label={label} />
 
       {/* Single week summary card */}
       <WeatherCard summary={forecast} label={label} tempUnit={tempUnit} windUnit={windUnit} delay={50} />

@@ -33,42 +33,20 @@ export default defineConfig({
   },
 
   /* Configure projects for major browsers */
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
+  // WebKit can be flaky/abort in some local environments; keep interview runs stable by
+  // defaulting to Chromium. Opt into full cross-browser via `PW_BROWSERS=all`.
+  projects: (() => {
+    const raw = (process.env.PW_BROWSERS || 'chromium').trim().toLowerCase();
+    const enabled = raw === 'all' ? ['chromium', 'firefox', 'webkit'] : raw.split(',').map((s) => s.trim()).filter(Boolean);
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
+    const allProjects = {
+      chromium: { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+      firefox: { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+      webkit: { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    } as const;
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
-  ],
+    return enabled.map((name) => allProjects[name as keyof typeof allProjects]).filter(Boolean);
+  })(),
 
   /* Run your local dev server before starting the tests */
   webServer: {

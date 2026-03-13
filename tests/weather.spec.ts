@@ -46,21 +46,16 @@ test('WeatherWeek Core Flow', async ({ page }) => {
     await route.fulfill({ json });
   });
 
-  // Mock Mapbox search API so tests don't timeout trying to fetch real places
-  await page.route('**/search/geocode/v6/forward**', async (route) => {
+  // Mock Nominatim search API so tests don't hit the live endpoint
+  await page.route('**/nominatim.openstreetmap.org/search**', async (route) => {
     await route.fulfill({
-      json: {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            properties: {
-              name: 'San Francisco',
-              full_address: 'San Francisco, CA, United States'
-            }
-          }
-        ]
-      }
+      json: [
+        {
+          place_id: 12345,
+          name: 'San Francisco',
+          display_name: 'San Francisco, CA, United States',
+        },
+      ],
     });
   });
 
@@ -71,8 +66,8 @@ test('WeatherWeek Core Flow', async ({ page }) => {
   await expect(page.getByText("Where's the meetup?")).toBeVisible();
 
   // To avoid extremely flaky 3rd party shadow DOM event listeners in headless browser tests,
-  // we circumvent Mapbox entirely via a hidden state-injection input exposed only in non-prod.
-  // This verifies that WHEN Mapbox successfully resolves a place, the rest of the app reacts correctly.
+  // we circumvent the autocomplete entirely via a hidden state-injection input exposed only in non-prod.
+  // This verifies that WHEN autocomplete successfully resolves a place, the rest of the app reacts correctly.
   const injectionInput = page.getByTestId('e2e-location-inject');
   await injectionInput.evaluate((node: HTMLInputElement) => {
     // React synthetic events need the native value setter bypassed to trigger onChange properly

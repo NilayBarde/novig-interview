@@ -5,20 +5,15 @@ test('Mobile: long location is truncated in input but fully visible below', asyn
 
   const longAddress = 'Williamsburg, Brooklyn, New York, United States';
 
-  await page.route('**/search/geocode/v6/forward**', async (route) => {
+  await page.route('**/nominatim.openstreetmap.org/search**', async (route) => {
     await route.fulfill({
-      json: {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            properties: {
-              name: 'Williamsburg',
-              full_address: longAddress,
-            },
-          },
-        ],
-      },
+      json: [
+        {
+          place_id: 67890,
+          name: 'Williamsburg',
+          display_name: longAddress,
+        },
+      ],
     });
   });
 

@@ -9,7 +9,7 @@ A React single-page app for outdoor meetup organizers to check the weather forec
 - **Hourly charts** — Temperature, rain probability, and wind speed in stacked metric panels, each with its own honest scale
 - **Simple verdicts** — Plain-language condition descriptions (Comfortable / Rain likely / Very windy) color-coded by severity
 - **Configurable event** — Choose day of week, time window (morning/afternoon/evening/all day), and °F/°C + mph/km/h display
-- **Location search** — Free-text input with debounced API calls, Mapbox autocomplete, and geocoded address confirmation
+- **Location search** — Free-text input with debounced autocomplete via OpenStreetMap Nominatim (supports parks, landmarks, and addresses), with geocoded address confirmation
 - **Responsive** — Single-column on mobile, full layout on desktop
 - **Error handling** — Typed error states for invalid location, rate limiting, and network failures with distinct icons and retry
 
@@ -93,7 +93,7 @@ src/
 
 9. **Day/time selectors as pill buttons** — Pills show all options simultaneously (7 days, 4 time windows) with no click-to-open overhead, and naturally extend to multi-select if the product ever allows comparing multiple days. A dropdown adds friction with no benefit at this scale.
 
-10. **Address autocomplete** — Custom autocomplete on the Mapbox Geocoding v6 REST API with debounced fetch, keyboard navigation, and full ARIA combobox semantics. No third-party UI component was used to keep full control over the interaction model.
+10. **Address autocomplete** — Custom autocomplete on the OpenStreetMap Nominatim API (no API key required). Nominatim was chosen over Mapbox Geocoding v6 because the core venue type for outdoor meetups — parks, fields, plazas — are POIs, and the Mapbox v6 API does not index POIs. Nominatim covers them fully. Requests are debounced at 500ms. Note: browsers do not allow setting the `User-Agent` header from client-side JavaScript; the browser supplies its own `User-Agent` and sends `Referer` automatically.
 
 11. **Preference persistence** — Location, day, time window, and both unit preferences are written to `localStorage` and restored on load. The current week view is not persisted — on load the app always shows This Week and Next Week.
 
@@ -105,7 +105,7 @@ src/
 
 ## API Key
 
-The API key is bundled into the client (via `VITE_` prefix) — acceptable for a prototype. A production app would proxy requests through a serverless function.
+The Visual Crossing API key is bundled into the client (via `VITE_` prefix) — acceptable for a prototype. A production app would proxy requests through a serverless function. Location search uses OpenStreetMap Nominatim and requires no API key.
 
 ## Deploy
 

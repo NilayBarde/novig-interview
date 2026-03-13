@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { MapPin, Loader2 } from 'lucide-react';
-import { MAPBOX_ACCESS_TOKEN } from '../../config/constants';
 import { DEBOUNCE_MS } from '../../config/constants';
 
 interface Suggestion {
@@ -17,12 +16,15 @@ interface LocationInputProps {
 }
 
 /**
- * Location autocomplete powered by the Mapbox Geocoding v6 REST API.
+ * Location autocomplete powered by the OpenStreetMap Nominatim API.
  *
- * Instead of using the `@mapbox/search-js-react` black-box component,
- * we call the API directly so we have full control over the DOM and
+ * We call the API directly so we have full control over the DOM and
  * can style everything with standard Tailwind classes — no shadow DOM,
- * no `!important` overrides.
+ * no `!important` overrides. No API key required.
+ *
+ * Nominatim was chosen over Mapbox Geocoding v6 because the core venue
+ * type for outdoor meetups — parks, fields, plazas — are POIs, and the
+ * Mapbox v6 API does not index POIs. Nominatim covers them fully.
  */
 export function LocationInput({ onLocationChange, initialValue = '', resolvedAddress, isLoading }: LocationInputProps) {
   const [query, setQuery] = useState(initialValue);
@@ -36,7 +38,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Fetch suggestions from Mapbox Geocoding API
+  // Fetch suggestions from Nominatim (OpenStreetMap) API
   const fetchSuggestions = useCallback(async (searchText: string) => {
     if (searchText.trim().length < 2) {
       setSuggestions([]);
@@ -54,37 +56,39 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
     try {
       const params = new URLSearchParams({
         q: searchText,
-        access_token: MAPBOX_ACCESS_TOKEN,
-        language: 'en',
+        format: 'json',
         limit: '5',
-        types: 'place,postcode,address,neighborhood,locality',
+        addressdetails: '1',
       });
 
       const res = await fetch(
-        `https://api.mapbox.com/search/geocode/v6/forward?${params}`,
-        { signal: abortRef.current.signal },
+        `https://nominatim.openstreetmap.org/search?${params}`,
+        {
+          signal: abortRef.current.signal,
+        },
       );
 
-      if (!res.ok) throw new Error(`Mapbox returned ${res.status}`);
+      if (!res.ok) throw new Error(`Nominatim returned ${res.status}`);
 
       const data = await res.json();
-      const results: Suggestion[] = (data.features || []).map(
-        (f: { id: string; properties: { name: string; full_address?: string; place_formatted?: string } }) => ({
-          id: f.id,
-          name: f.properties.name,
-          fullAddress: f.properties.full_address || f.properties.place_formatted || f.properties.name,
-        }),
-      );
+      const items = Array.isArray(data) ? (data as { place_id: number; name: string; display_name: string }[]) : [];
+      const results: Suggestion[] = items.map((item) => ({
+        id: item.place_id.toString(),
+        name: item.name || item.display_name.split(',')[0],
+        fullAddress: item.display_name,
+      }));
 
       setSuggestions(results);
-      setIsOpen(true);
+      setIsOpen(results.length > 0);
       setActiveIndex(-1);
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') return;
       // API unreachable — show an error state so the user knows it's a network
       // issue, not a genuine no-results. They can still type a plain location.
       setFetchError(true);
-      setIsOpen(true);
+      setSuggestions([]);
+      setIsOpen(false);
+      setActiveIndex(-1);
     } finally {
       setIsFetchingSuggestions(false);
     }
@@ -121,10 +125,12 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
+          if (suggestions.length === 0) return;
           setActiveIndex((prev) => (prev + 1) % suggestions.length);
           break;
         case 'ArrowUp':
           e.preventDefault();
+          if (suggestions.length === 0) return;
           setActiveIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
           break;
         case 'Enter':
@@ -133,6 +139,13 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
             const idx = activeIndex >= 0 ? activeIndex : 0;
             if (idx < suggestions.length) {
               handleSelect(suggestions[idx]);
+            } else if (query.trim().length > 0) {
+              // No suggestions available (autocomplete down or user typed freely) —
+              // commit whatever is in the input directly.
+              const committed = query.trim();
+              setQuery(committed);
+              setIsOpen(false);
+              onLocationChange(committed);
             }
           }
           break;
@@ -143,7 +156,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
           break;
       }
     },
-    [isOpen, activeIndex, suggestions, handleSelect],
+    [isOpen, activeIndex, suggestions, handleSelect, query, onLocationChange],
   );
 
   // Click outside to close
@@ -252,21 +265,14 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
           </ul>
         )}
 
-        {/* No results / fetch error message */}
-        {isOpen && suggestions.length === 0 && query.trim().length >= 2 && !isFetchingSuggestions && (
-          <div
-            className="absolute top-full left-0 right-0 mt-2 py-3 px-4
-              bg-white rounded-xl border border-sand-200/60
-              shadow-lg shadow-sand-300/20 z-50"
-          >
-            {fetchError ? (
-              <p className="text-sm text-ember-500">Could not reach location service — you can still type a location manually</p>
-            ) : (
-              <p className="text-sm text-sand-400">No locations found</p>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* No results / fetch error message */}
+      {suggestions.length === 0 && query.trim().length >= 2 && !isFetchingSuggestions && (
+        <p className={`text-xs pl-1 ${fetchError ? 'text-ember-500' : 'text-sand-400'}`}>
+          {fetchError ? 'Could not reach location service — you can still type a location manually' : 'No locations found'}
+        </p>
+      )}
 
       {resolvedAddress && (
         <p className="text-xs text-sand-500 pl-1 animate-fade-up break-words">

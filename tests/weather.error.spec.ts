@@ -1,20 +1,15 @@
 import { test, expect } from '@playwright/test';
 
 test('WeatherWeek shows rate-limit error state', async ({ page }) => {
-  await page.route('**/search/geocode/v6/forward**', async (route) => {
+  await page.route('**/nominatim.openstreetmap.org/search**', async (route) => {
     await route.fulfill({
-      json: {
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            properties: {
-              name: 'San Francisco',
-              full_address: 'San Francisco, CA, United States',
-            },
-          },
-        ],
-      },
+      json: [
+        {
+          place_id: 12345,
+          name: 'San Francisco',
+          display_name: 'San Francisco, CA, United States',
+        },
+      ],
     });
   });
 
