@@ -1,7 +1,7 @@
 /**
  * Global UI state for the event configuration controls.
  *
- * Server state (weather data) is managed by React Query in `useWeatherForecast`.
+ * Server state (weather data) is managed by React Query in `useMultiWeekForecasts`.
  * This context only holds user-selected settings: location, day, time range,
  * and temperature display unit.
  *

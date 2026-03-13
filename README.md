@@ -4,8 +4,8 @@ A React single-page app for outdoor meetup organizers to check the weather forec
 
 ## Features
 
-- **Week navigator** — Browse upcoming occurrences of the event day (This Week / Next Week / In 2 Weeks) using `< Prev` / `Next >` controls; offset resets when location or day changes
-- **Action recommendation** — Prominent banner below the nav tells the organizer what to do: "All good — enjoy the event", "Go ahead — bring layers and pack rain gear", or "Consider rescheduling — heavy rain likely"
+- **Side-by-side comparison** — This Week and Next Week shown simultaneously; swipe carousel on mobile, two-column grid on desktop
+- **Action recommendation** — Prominent banner below the week heading tells the organizer what to do: "All good — enjoy the event", "Go ahead — bring layers and pack rain gear", or "Consider rescheduling — heavy rain likely"
 - **Hourly charts** — Temperature, rain probability, and wind speed in stacked metric panels, each with its own honest scale
 - **Simple verdicts** — Plain-language condition descriptions (Comfortable / Rain likely / Very windy) color-coded by severity
 - **Configurable event** — Choose day of week, time window (morning/afternoon/evening/all day), and °F/°C + mph/km/h display
@@ -62,10 +62,10 @@ src/
   utils/
     dateUtils.ts                — Date computation (base event date, week offsets, formatting)
     temperatureUtils.ts         — °F/°C conversion
+    weatherSummary.ts           — Day summarization: hourly aggregation, precip/wind/temp extraction
   context/EventConfigContext.tsx — Persisted UI state (location, day, time, units)
   hooks/
-    useWeatherForecast.ts       — React Query wrapper, data transformation, availableWeeks
-    useEventDates.ts            — Computes target date from selected day + weekOffset
+    useMultiWeekForecasts.ts    — React Query wrapper, extracts N weekly summaries from a single API call
   components/
     layout/                     — Header, PageContainer
     controls/                   — LocationInput, DaySelector, TimeRangeSelector, TempUnitToggle, WindUnitToggle
@@ -75,7 +75,7 @@ src/
 
 ### Key Decisions
 
-1. **Week navigator over side-by-side comparison** — Each weekly occurrence is independent: the organizer decides whether to run this week's event on its own merits, then separately decides the same for next week. There is no cross-week tradeoff to make. A week navigator keeps the focus on one event at a time, delivers an unambiguous per-week recommendation, and works cleanly on mobile without a cramped two-column layout. Next week's forecast is there for early communication — letting attendees know what to expect — not for comparison.
+1. **Side-by-side comparison over a week navigator** — Showing This Week and Next Week simultaneously lets the organizer scan both at once: if this week looks bad and next week looks fine, the decision to reschedule is immediate and obvious. A single-week navigator forces two separate page states to reach the same conclusion. On desktop the two columns sit naturally in a CSS grid; on mobile a scroll-snap carousel with `w-[90vw]` cards gives a peek of the second week and makes the swipe interaction self-evident. Extending to a third week requires only passing `weekCount={3}` to `useMultiWeekForecasts` and adding `md:grid-cols-3` — the data constraint is the Visual Crossing 15-day free-tier window (covers two occurrences of any weekday; a paid plan unlocks a third).
 
 2. **Action recommendation banner** — The organizer's primary question is "should I run this event?" The banner answers this directly above the detail cards, deriving context-aware copy from the actual forecast: caution tells them what to bring; warning tells them why to reconsider. Verdict rows in the card are simplified to plain condition descriptions ("Comfortable", "Rain likely") since the actionable advice lives in the banner.
 
@@ -83,7 +83,7 @@ src/
 
 4. **Timezone awareness** — All date logic uses the IANA `timezone` string returned by the Visual Crossing API for the geocoded location, not the user's browser timezone. The event date, the "today already past" check, and the location date display all reflect the event location's calendar — so a user in Sydney planning a New York meetup sees New York dates throughout.
 
-5. **"Today already past" handling** — Selecting "Wednesday + Morning" on a Wednesday evening would naively show today's elapsed morning as "This Week." If the selected day is today and the time window's final hour has started (`currentHour >= endHour`), the base date advances by one week. This is computed once in `getBaseEventDate` (dateUtils) and used consistently by both `useEventDates` and `useWeatherForecast`, so the displayed forecast and the available-week count always agree.
+5. **"Today already past" handling** — Selecting "Wednesday + Morning" on a Wednesday evening would naively show today's elapsed morning as "This Week." If the selected day is today and the time window's final hour has started (`currentHour >= endHour`), the base date advances by one week. This is computed once in `getBaseEventDate` (dateUtils) and hoisted outside the week-iteration loop in `useMultiWeekForecasts`, so all weekly offsets share a consistent anchor date.
 
 6. **`precipprob` over humidity** — The PRD specified humidity (25–75%) as the rain signal. Raw humidity is unreliable — 80% humidity on a clear day is common. `precipprob` is the model-computed probability of measurable precipitation and is the correct field for "will it rain?"
 
@@ -95,7 +95,7 @@ src/
 
 10. **Address autocomplete** — Custom autocomplete on the Mapbox Geocoding v6 REST API with debounced fetch, keyboard navigation, and full ARIA combobox semantics. No third-party UI component was used to keep full control over the interaction model.
 
-11. **Preference persistence** — Location, day, time window, and both unit preferences are written to `localStorage` and restored on load. `weekOffset` is intentionally transient — it resets to "This Week" whenever location or day changes, since those changes invalidate the previously viewed offset.
+11. **Preference persistence** — Location, day, time window, and both unit preferences are written to `localStorage` and restored on load. The current week view is not persisted — on load the app always shows This Week and Next Week.
 
 12. **Smart retry** — React Query retries network and server errors with exponential backoff but skips retries on 400 responses (invalid location). Those are deterministic failures; retrying wastes time and quota.
 
