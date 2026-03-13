@@ -4,7 +4,7 @@ A React single-page app for outdoor meetup organizers to check the weather forec
 
 ## Features
 
-- **Side-by-side comparison** — This Week and Next Week shown simultaneously; prev/next chevrons in the week heading on mobile, two-column grid on desktop
+- **Side-by-side comparison** — This Week and Next Week shown simultaneously; prev/next arrows in the week heading on mobile, two-column grid on desktop
 - **Action recommendation** — Prominent banner below the week heading tells the organizer what to do: "All good — enjoy the event", "Go ahead — bring layers and pack rain gear", or "Consider rescheduling — heavy rain likely"
 - **Hourly charts** — Temperature, rain probability, and wind speed in stacked metric panels, each with its own honest scale
 - **Simple verdicts** — Plain-language condition descriptions (Comfortable / Rain likely / Very windy) color-coded by severity
@@ -81,7 +81,7 @@ src/
 
 4. **Timezone awareness** — All date logic uses the IANA `timezone` string returned by the Visual Crossing API for the geocoded location, not the user's browser timezone. This ensures the event date and the "today already past" check reflect the meetup location's actual calendar.
 
-5. **"Today already past" handling** — Selecting "Wednesday + Morning" on a Wednesday evening would naively show today's elapsed morning as "This Week." The app automatically advances the base date by one week if the selected time window for today has already elapsed, ensuring the first view is always useful.
+5. **"Today already past" handling** — A recurring event means the organizer will often check the app on or after the selected day. The app accounts for this by detecting when the chosen day and time window have already elapsed and automatically advancing the base date by one week, so the first view is always a future, actionable forecast.
 
 6. **`precipprob` over humidity** — The PRD suggests humidity (25–75%) as the rain signal, but raw humidity is an unreliable indicator. `precipprob` (model-computed probability of measurable precipitation) is the standard field for answering "will it rain?" and is used as the primary driver for rain verdicts.
 
@@ -100,11 +100,13 @@ src/
 ## Future Considerations
 
 - **Actual Precip Accumulation** — Factoring in `precip` (inches) alongside probability to distinguish between light drizzle and heavy rain.
-- **Syncing Multi-week Domains** — Currently charts use localized domains for precision; syncing Y-axes across weeks would enable easier magnitude comparison.
+- **Extended Forecast Window** — The Visual Crossing free tier caps forecasts at 15 days, which supports two weeks of comparison but no further. Upgrading to a paid plan would allow organizers to plan further out (e.g., 3–4 weeks ahead). The desktop layout (currently a fixed 2-column grid) would need to adapt — options include a responsive grid for 3–4 weeks or a horizontal scroll/carousel for larger counts. Mobile already scales naturally via the prev/next chevron pattern, though a position indicator (e.g. "Week 2 of 4") would become useful once there are more than two weeks to navigate.
 
 ## API Key
 
 The Visual Crossing API key is bundled into the client (via `VITE_` prefix) — standard for a prototype. Location search uses OpenStreetMap Nominatim and requires no API key.
+
+> **Note:** The Visual Crossing free tier provides up to 15 days of forecast data. This is sufficient for comparing this week and next, but limits lookahead beyond that.
 
 ## Deploy
 
