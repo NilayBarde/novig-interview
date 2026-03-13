@@ -201,7 +201,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
             type="text"
             data-testid="e2e-location-inject"
             className="hidden"
-            onChange={(e) => onLocationChange(e.target.value)}
+            onChange={(e) => { setIsCommitted(true); onLocationChange(e.target.value); }}
           />
         )}
         <MapPin
