@@ -268,7 +268,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
       </div>
 
       {/* No results / fetch error message */}
-      {suggestions.length === 0 && query.trim().length >= 2 && !isFetchingSuggestions && (
+      {suggestions.length === 0 && query.trim().length >= 2 && !isFetchingSuggestions && !resolvedAddress && (
         <p className={`text-xs pl-1 ${fetchError ? 'text-ember-500' : 'text-sand-400'}`}>
           {fetchError ? 'Could not reach location service — you can still type a location manually' : 'No locations found'}
         </p>
