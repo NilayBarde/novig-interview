@@ -55,57 +55,56 @@ npm run dev
 ```
 src/
   config/constants.ts           — Thresholds, enums, API config
-  types/weather.ts, app.ts      — Visual Crossing API types, app domain types
+  types/weather.ts, app.ts      — API types and app domain types
   services/
-    weatherApi.ts               — API fetch with typed error handling
-    weatherMessages.ts          — Pure functions: weather data → verdicts + recommendation
+    weatherApi.ts               — Fetch logic with typed error handling
+    weatherMessages.ts          — Logic: weather data → verdicts + recommendation
   utils/
-    dateUtils.ts                — Date computation (base event date, week offsets, formatting)
-    temperatureUtils.ts         — °F/°C conversion
-    weatherSummary.ts           — Day summarization: hourly aggregation, precip/wind/temp extraction
-  context/EventConfigContext.tsx — Persisted UI state (location, day, time, units)
+    dateUtils.ts                — Calendar and timezone logic
+    weatherSummary.ts           — Hourly data aggregation
+  context/EventConfigContext.tsx — Persisted UI state (loc, day, time, units)
   hooks/
-    useMultiWeekForecasts.ts    — React Query wrapper, extracts N weekly summaries from a single API call
+    useMultiWeekForecasts.ts    — React Query wrapper; slices API results
   components/
-    layout/                     — Header, PageContainer
-    controls/                   — LocationInput, DaySelector, TimeRangeSelector, TempUnitToggle, WindUnitToggle
-    weather/                    — WeatherWeekView, RecommendationBanner, WeatherCard, WeatherChart, WeatherMessage
-    common/                     — LoadingState, ErrorState
+    layout/                     — Structural components
+    controls/                   — Input and selection pills
+    weather/                    — Forecast views, charts, and recommendations
 ```
 
 ### Key Decisions
 
-1. **Side-by-side comparison over a week navigator** — Showing This Week and Next Week simultaneously lets the organizer scan both at once: if this week looks bad and next week looks fine, the decision to reschedule is immediate and obvious. A single-week navigator forces two separate page states to reach the same conclusion. On desktop the two columns sit naturally in a CSS grid. On mobile, prev/next chevrons are embedded in the week heading card itself — this co-locates the navigation with the label it controls, avoids duplicating the week name in a separate tab bar, and is symmetric (both directions are always present, with boundary arrows disabled rather than hidden). A swipe carousel was considered but rejected: for two named options, a carousel creates a discovery problem — there is no obvious affordance for navigating back. Extending to a third week requires only passing `weekCount={3}` to `useMultiWeekForecasts` and adding `md:grid-cols-3` — the data constraint is the Visual Crossing 15-day free-tier window (covers two occurrences of any weekday; a paid plan unlocks a third).
+1. **Side-by-side comparison over a week navigator** — Showing This Week and Next Week simultaneously lets the organizer scan both at once: if this week looks bad and next week looks fine, the decision to reschedule is immediate and obvious. A single-week navigator forces two separate page states to reach the same conclusion. On desktop the two columns sit naturally in a CSS grid. On mobile, prev/next chevrons are embedded in the week heading card itself — this co-locates the navigation with the label it controls, avoids duplicating the week name in a separate tab bar, and is symmetric.
 
 2. **Action recommendation banner** — The organizer's primary question is "should I run this event?" The banner answers this directly above the detail cards, deriving context-aware copy from the actual forecast: caution tells them what to bring; warning tells them why to reconsider. Verdict rows in the card are simplified to plain condition descriptions ("Comfortable", "Rain likely") since the actionable advice lives in the banner.
 
-3. **Stacked metric panels** — A single combined chart with a dual Y-axis (temperature left, rain right) would technically satisfy the PRD's "scrollable graph" requirement but obscures rain values and leaves wind entirely invisible. Three stacked panels give each metric an honest scale; page scroll covers the PRD's scrollability requirement without a custom scroll container.
+3. **Stacked metric panels** — A single combined chart with a dual Y-axis would technically satisfy requirements but obscures rain values and leaves wind entirely invisible. Three stacked panels give each metric an honest scale; page scroll covers the "scrollable graph" requirement without a custom scroll container.
 
-4. **Timezone awareness** — All date logic uses the IANA `timezone` string returned by the Visual Crossing API for the geocoded location, not the user's browser timezone. The event date, the "today already past" check, and the location date display all reflect the event location's calendar — so a user in Sydney planning a New York meetup sees New York dates throughout.
+4. **Timezone awareness** — All date logic uses the IANA `timezone` string returned by the Visual Crossing API for the geocoded location, not the user's browser timezone. This ensures the event date and the "today already past" check reflect the meetup location's actual calendar.
 
-5. **"Today already past" handling** — Selecting "Wednesday + Morning" on a Wednesday evening would naively show today's elapsed morning as "This Week." If the selected day is today and the time window's final hour has started (`currentHour >= endHour`), the base date advances by one week. This is computed once in `getBaseEventDate` (dateUtils) and hoisted outside the week-iteration loop in `useMultiWeekForecasts`, so all weekly offsets share a consistent anchor date.
+5. **"Today already past" handling** — Selecting "Wednesday + Morning" on a Wednesday evening would naively show today's elapsed morning as "This Week." The app automatically advances the base date by one week if the selected time window for today has already elapsed, ensuring the first view is always useful.
 
-6. **`precipprob` over humidity** — The PRD specified humidity (25–75%) as the rain signal. Raw humidity is unreliable — 80% humidity on a clear day is common. `precipprob` is the model-computed probability of measurable precipitation and is the correct field for "will it rain?"
+6. **`precipprob` over humidity** — The PRD suggests humidity (25–75%) as the rain signal, but raw humidity is an unreliable indicator. `precipprob` (model-computed probability of measurable precipitation) is the standard field for answering "will it rain?" and is used as the primary driver for rain verdicts.
 
-7. **Peak precip probability** — Uses `max` (not `avg`) across hourly probabilities within the time window. If any single hour carries high rain risk, the organizer needs to know — averaging it away would understate the risk. A future improvement would factor in `precip` (actual expected accumulation in inches) alongside `precipprob` — a 90% chance of a light drizzle is meaningfully different from a 90% chance of heavy rain for an outdoor event.
+7. **Peak precip probability** — Uses `max` (not `avg`) across hourly probabilities within the time window. If any single hour carries high rain risk, the organizer needs to know — averaging it away would understate the risk.
 
-8. **Single API call** — Fetches the full 15-day forecast once and slices it client-side for each week offset. Minimizes API usage, gives atomic loading state, and makes the result cacheable for the full session. `weekOffset` is intentionally excluded from the React Query key.
+8. **Single API call** — Fetches the full 15-day forecast once and slices it client-side for each week offset. This minimizes API usage, gives a single atomic loading state, and makes the results cacheable for the session.
 
-9. **Day/time selectors as pill buttons** — Pills show all options simultaneously (7 days, 4 time windows) with no click-to-open overhead, and naturally extend to multi-select if the product ever allows comparing multiple days. A dropdown adds friction with no benefit at this scale.
+9. **Pill-style selectors** — Day and time selectors show all options simultaneously with no click-to-open overhead. This reduces friction compared to a dropdown and naturally extends to multi-select if needed later.
 
-10. **Address autocomplete** — Custom autocomplete on the OpenStreetMap Nominatim API (no API key required). Nominatim was chosen over Mapbox Geocoding v6 because the core venue type for outdoor meetups — parks, fields, plazas — are POIs, and the Mapbox v6 API does not index POIs. Nominatim covers them fully. Requests are debounced at 500ms. Note: browsers do not allow setting the `User-Agent` header from client-side JavaScript; the browser supplies its own `User-Agent` and sends `Referer` automatically.
+10. **Address autocomplete** — Custom autocomplete on the OpenStreetMap Nominatim API. Nominatim was chosen for its superior coverage of POIs (parks, fields, plazas) which are the core venue types for outdoor meetups. Requests are debounced at 500ms.
 
-11. **Preference persistence** — Location, day, time window, and both unit preferences are written to `localStorage` and restored on load. The current week view is not persisted — on load the app always shows This Week and Next Week.
+11. **Preference persistence** — Location, day, time window, and units are written to `localStorage` and restored on load, providing a "sticky" experience for recurring organizers.
 
-12. **Smart retry** — React Query retries network and server errors with exponential backoff but skips retries on 400 responses (invalid location). Those are deterministic failures; retrying wastes time and quota.
+12. **Smart retry** — React Query retries network errors with exponential backoff but skips retries on deterministic 400 responses (e.g., invalid location), saving quota and user time.
 
-13. **Location-aware date near controls** — Once a location resolves, a line like "Los Angeles — Wednesday, Mar 11" appears between the location input and the day/time selectors. It uses the event location's IANA timezone so the date reflects the event location's calendar day, not the browser's.
+## Future Considerations
 
-14. **Keyboard accessibility** — Day and time selectors use Tab + Enter/Space rather than the WAI-ARIA roving `tabIndex` arrow-key pattern. All controls retain `role="radio"` and `aria-checked` for screen-reader semantics.
+- **Actual Precip Accumulation** — Factoring in `precip` (inches) alongside probability to distinguish between light drizzle and heavy rain.
+- **Syncing Multi-week Domains** — Currently charts use localized domains for precision; syncing Y-axes across weeks would enable easier magnitude comparison.
 
 ## API Key
 
-The Visual Crossing API key is bundled into the client (via `VITE_` prefix) — acceptable for a prototype. A production app would proxy requests through a serverless function. Location search uses OpenStreetMap Nominatim and requires no API key.
+The Visual Crossing API key is bundled into the client (via `VITE_` prefix) — standard for a prototype. Location search uses OpenStreetMap Nominatim and requires no API key.
 
 ## Deploy
 
