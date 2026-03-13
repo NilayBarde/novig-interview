@@ -33,6 +33,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
   const [fetchError, setFetchError] = useState(false);
+  const [isCommitted, setIsCommitted] = useState(!!initialValue);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,6 +100,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setQuery(value);
+      setIsCommitted(false);
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => fetchSuggestions(value), DEBOUNCE_MS);
     },
@@ -112,6 +114,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
       setSuggestions([]);
       setIsOpen(false);
       setFetchError(false);
+      setIsCommitted(true);
       onLocationChange(suggestion.fullAddress);
     },
     [onLocationChange],
@@ -145,6 +148,7 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
               const committed = query.trim();
               setQuery(committed);
               setIsOpen(false);
+              setIsCommitted(true);
               onLocationChange(committed);
             }
           }
@@ -268,13 +272,13 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
       </div>
 
       {/* No results / fetch error message */}
-      {suggestions.length === 0 && query.trim().length >= 2 && !isFetchingSuggestions && !resolvedAddress && (
+      {suggestions.length === 0 && query.trim().length >= 2 && !isFetchingSuggestions && !isCommitted && (
         <p className={`text-xs pl-1 ${fetchError ? 'text-ember-500' : 'text-sand-400'}`}>
           {fetchError ? 'Could not reach location service — you can still type a location manually' : 'No locations found'}
         </p>
       )}
 
-      {resolvedAddress && (
+      {resolvedAddress && isCommitted && (
         <p className="text-xs text-sand-500 pl-1 animate-fade-up break-words">
           <span className="text-sage-500 font-semibold">Found:</span>{' '}
           {resolvedAddress}

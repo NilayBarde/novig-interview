@@ -38,7 +38,7 @@ export function WeatherChart({
   delay = 0,
 }: WeatherChartProps) {
   const chartData = buildChartData(summary, metric, tempUnit, windUnit);
-  const { dataKey, color, yDomain, tickFormatter, tooltipFormatter, legend } = getMetricConfig(
+  const { dataKey, color, yDomain, yTicks, tickFormatter, tooltipFormatter, legend } = getMetricConfig(
     metric,
     tempUnit,
     windUnit,
@@ -64,6 +64,7 @@ export function WeatherChart({
             />
             <YAxis
               domain={yDomain}
+              ticks={yTicks}
               tick={{ fontSize: 10, fill: '#9a8568' }}
               tickLine={false}
               axisLine={false}
@@ -145,9 +146,17 @@ interface MetricConfig {
   dataKey: string;
   color: string;
   yDomain: [number | string, number | string];
+  yTicks?: number[];
   tickFormatter: (v: number) => string;
   tooltipFormatter: (value: unknown) => [string, string];
   legend: string;
+}
+
+/** Generate N evenly-spaced ticks between min and max (inclusive). */
+function evenTicks(min: number, max: number, count = 6): number[] {
+  if (min === max) return [min];
+  const step = (max - min) / (count - 1);
+  return Array.from({ length: count }, (_, i) => Math.round((min + i * step) * 10) / 10);
 }
 
 function getMetricConfig(
@@ -163,6 +172,7 @@ function getMetricConfig(
       dataKey: 'value',
       color: '#ef7d33',
       yDomain: tempDomain ?? ['auto', 'auto'],
+      yTicks: tempDomain ? evenTicks(tempDomain[0], tempDomain[1]) : undefined,
       tickFormatter: (v) => `${v}°`,
       tooltipFormatter: (v) => [`${v}${unitLabel}`, 'Temperature'],
       legend: 'Temperature',
@@ -184,6 +194,7 @@ function getMetricConfig(
     dataKey: 'value',
     color: '#7c9cbf',
     yDomain: windDomain ?? [0, 'auto'],
+    yTicks: windDomain ? evenTicks(windDomain[0], windDomain[1]) : undefined,
     tickFormatter: (v) => `${v}`,
     tooltipFormatter: (v) => [`${v} ${unitLabel}`, 'Wind speed'],
     legend: `Wind speed (${unitLabel})`,
