@@ -13,8 +13,17 @@ import { WeatherWeekView } from './components/weather/WeatherWeekView';
 import { LoadingState } from './components/common/LoadingState';
 import { ErrorState } from './components/common/ErrorState';
 import { CloudSun } from 'lucide-react';
+import { displayTemp, displayWindSpeed } from './utils/temperatureUtils';
 
 const queryClient = new QueryClient();
+
+/** Snap a value down/up to the nearest multiple of `step` for clean chart ticks */
+const snapDown = (v: number, step = 5) => Math.floor(v / step) * step;
+const snapUp = (v: number, step = 5) => Math.ceil(v / step) * step;
+
+/** Safe min/max via reduce — avoids RangeError from spread on large arrays */
+const safeMin = (arr: number[]) => arr.reduce((a, b) => Math.min(a, b), Infinity);
+const safeMax = (arr: number[]) => arr.reduce((a, b) => Math.max(a, b), -Infinity);
 
 function weekLabel(offset: number): string {
   if (offset === 0) return 'This Week';
@@ -61,6 +70,28 @@ function WeatherDashboard() {
 
   const visibleWeeks = weeks.filter((w) => w.summary !== null);
   const hasAnyForecast = visibleWeeks.length > 0;
+
+  // Compute shared y-axis domains across all visible weeks so charts use the
+  // same scale — a mismatched scale makes weeks look more (or less) different
+  // than they actually are. Convert to display units first so the domain matches
+  // the values Recharts actually plots (raw storage is °F / mph).
+  const allDisplayTemps = visibleWeeks.flatMap(
+    (w) => w.summary?.hourlyTemps.map((h) => displayTemp(h.temp, config.tempUnit)) ?? [],
+  );
+  const allDisplayWinds = visibleWeeks.flatMap(
+    (w) => w.summary?.hourlyWindSpeed.map((h) => displayWindSpeed(h.windSpeed, config.windUnit)) ?? [],
+  );
+  const tempDomain: [number, number] | undefined =
+    allDisplayTemps.length > 0
+      ? [snapDown(safeMin(allDisplayTemps)), snapUp(safeMax(allDisplayTemps))]
+      : undefined;
+  const windDomain: [number, number] | undefined =
+    allDisplayWinds.length > 0
+      ? [
+          Math.max(0, snapDown(safeMin(allDisplayWinds))), // clamp at 0 — negative wind speed is meaningless
+          snapUp(safeMax(allDisplayWinds)),
+        ]
+      : undefined;
 
   return (
     <>
@@ -109,6 +140,8 @@ function WeatherDashboard() {
                     forecast={summary!}
                     tempUnit={config.tempUnit}
                     windUnit={config.windUnit}
+                    tempDomain={tempDomain}
+                    windDomain={windDomain}
                     onPrev={() => setActiveTab(i - 1)}
                     onNext={() => setActiveTab(i + 1)}
                     canGoPrev={i > 0}

@@ -10,6 +10,9 @@ interface WeatherWeekViewProps {
   forecast: WeatherSummary;
   tempUnit: TempUnit;
   windUnit: WindUnit;
+  /** Shared y-axis domains across weeks so charts are visually comparable */
+  tempDomain?: [number, number];
+  windDomain?: [number, number];
   /** Mobile-only prev/next navigation — omit on desktop where both columns are visible */
   onPrev?: () => void;
   onNext?: () => void;
@@ -17,7 +20,7 @@ interface WeatherWeekViewProps {
   canGoNext?: boolean;
 }
 
-export function WeatherWeekView({ label, forecast, tempUnit, windUnit, onPrev, onNext, canGoPrev, canGoNext }: WeatherWeekViewProps) {
+export function WeatherWeekView({ label, forecast, tempUnit, windUnit, tempDomain, windDomain, onPrev, onNext, canGoPrev, canGoNext }: WeatherWeekViewProps) {
   return (
     <div className="space-y-6">
       {/* Section heading */}
@@ -59,7 +62,7 @@ export function WeatherWeekView({ label, forecast, tempUnit, windUnit, onPrev, o
       <div className="space-y-4">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-sand-400 mb-2 px-1">Temperature</p>
-          <WeatherChart summary={forecast} metric="temp" label={label} tempUnit={tempUnit} delay={150} />
+          <WeatherChart summary={forecast} metric="temp" label={label} tempUnit={tempUnit} tempDomain={tempDomain} delay={150} />
         </div>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-sand-400 mb-2 px-1">Rain Probability</p>
@@ -67,7 +70,7 @@ export function WeatherWeekView({ label, forecast, tempUnit, windUnit, onPrev, o
         </div>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-sand-400 mb-2 px-1">Wind Speed</p>
-          <WeatherChart summary={forecast} metric="wind" label={label} windUnit={windUnit} delay={350} />
+          <WeatherChart summary={forecast} metric="wind" label={label} windUnit={windUnit} windDomain={windDomain} delay={350} />
         </div>
       </div>
     </div>
