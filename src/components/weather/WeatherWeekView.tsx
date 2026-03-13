@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { WeatherSummary } from '../../types/app';
 import type { TempUnit, WindUnit } from '../../config/constants';
 import { RecommendationBanner } from './RecommendationBanner';
@@ -9,16 +10,42 @@ interface WeatherWeekViewProps {
   forecast: WeatherSummary;
   tempUnit: TempUnit;
   windUnit: WindUnit;
+  /** Mobile-only prev/next navigation — omit on desktop where both columns are visible */
+  onPrev?: () => void;
+  onNext?: () => void;
+  canGoPrev?: boolean;
+  canGoNext?: boolean;
 }
 
-export function WeatherWeekView({ label, forecast, tempUnit, windUnit }: WeatherWeekViewProps) {
+export function WeatherWeekView({ label, forecast, tempUnit, windUnit, onPrev, onNext, canGoPrev, canGoNext }: WeatherWeekViewProps) {
   return (
     <div className="space-y-6">
       {/* Section heading */}
       <div className="glass-warm rounded-2xl p-4 sm:p-5 shadow-lg shadow-sand-300/20">
-        <div className="text-center">
-          <p className="font-[family-name:var(--font-display)] text-base text-sand-700">{label}</p>
-          <p className="text-xs text-sand-400 mt-0.5">{forecast.dayLabel}</p>
+        <div className="flex items-center justify-between">
+          {/* md:hidden removes these from layout and the a11y tree on desktop */}
+          <button
+            onClick={onPrev}
+            disabled={!canGoPrev}
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-xl text-sand-500 hover:text-sand-800 disabled:opacity-20 disabled:cursor-not-allowed transition-opacity"
+            aria-label="Previous week"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+
+          <div className="flex-1 text-center">
+            <p className="font-[family-name:var(--font-display)] text-base text-sand-700">{label}</p>
+            <p className="text-xs text-sand-400 mt-0.5">{forecast.dayLabel}</p>
+          </div>
+
+          <button
+            onClick={onNext}
+            disabled={!canGoNext}
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-xl text-sand-500 hover:text-sand-800 disabled:opacity-20 disabled:cursor-not-allowed transition-opacity"
+            aria-label="Next week"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
         </div>
       </div>
 

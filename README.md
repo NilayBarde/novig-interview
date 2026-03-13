@@ -4,7 +4,7 @@ A React single-page app for outdoor meetup organizers to check the weather forec
 
 ## Features
 
-- **Side-by-side comparison** — This Week and Next Week shown simultaneously; swipe carousel on mobile, two-column grid on desktop
+- **Side-by-side comparison** — This Week and Next Week shown simultaneously; prev/next chevrons in the week heading on mobile, two-column grid on desktop
 - **Action recommendation** — Prominent banner below the week heading tells the organizer what to do: "All good — enjoy the event", "Go ahead — bring layers and pack rain gear", or "Consider rescheduling — heavy rain likely"
 - **Hourly charts** — Temperature, rain probability, and wind speed in stacked metric panels, each with its own honest scale
 - **Simple verdicts** — Plain-language condition descriptions (Comfortable / Rain likely / Very windy) color-coded by severity
@@ -75,7 +75,7 @@ src/
 
 ### Key Decisions
 
-1. **Side-by-side comparison over a week navigator** — Showing This Week and Next Week simultaneously lets the organizer scan both at once: if this week looks bad and next week looks fine, the decision to reschedule is immediate and obvious. A single-week navigator forces two separate page states to reach the same conclusion. On desktop the two columns sit naturally in a CSS grid; on mobile a scroll-snap carousel with `w-[90vw]` cards gives a peek of the second week and makes the swipe interaction self-evident. Extending to a third week requires only passing `weekCount={3}` to `useMultiWeekForecasts` and adding `md:grid-cols-3` — the data constraint is the Visual Crossing 15-day free-tier window (covers two occurrences of any weekday; a paid plan unlocks a third).
+1. **Side-by-side comparison over a week navigator** — Showing This Week and Next Week simultaneously lets the organizer scan both at once: if this week looks bad and next week looks fine, the decision to reschedule is immediate and obvious. A single-week navigator forces two separate page states to reach the same conclusion. On desktop the two columns sit naturally in a CSS grid. On mobile, prev/next chevrons are embedded in the week heading card itself — this co-locates the navigation with the label it controls, avoids duplicating the week name in a separate tab bar, and is symmetric (both directions are always present, with boundary arrows disabled rather than hidden). A swipe carousel was considered but rejected: for two named options, a carousel creates a discovery problem — there is no obvious affordance for navigating back. Extending to a third week requires only passing `weekCount={3}` to `useMultiWeekForecasts` and adding `md:grid-cols-3` — the data constraint is the Visual Crossing 15-day free-tier window (covers two occurrences of any weekday; a paid plan unlocks a third).
 
 2. **Action recommendation banner** — The organizer's primary question is "should I run this event?" The banner answers this directly above the detail cards, deriving context-aware copy from the actual forecast: caution tells them what to bring; warning tells them why to reconsider. Verdict rows in the card are simplified to plain condition descriptions ("Comfortable", "Rain likely") since the actionable advice lives in the banner.
 

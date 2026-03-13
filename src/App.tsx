@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EventConfigProvider, useEventConfig } from './context/EventConfigContext';
 import { useMultiWeekForecasts } from './hooks/useMultiWeekForecasts';
@@ -35,6 +36,13 @@ function App() {
 
 function WeatherDashboard() {
   const { config, setLocation, setDay, setTimeRange, setTempUnit, setWindUnit } = useEventConfig();
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Reset to first tab whenever the user picks a different location or day,
+  // so a stale activeTab=1 never leaves the content area blank.
+  useEffect(() => {
+    setActiveTab(0);
+  }, [config.location, config.day]);
 
   const { weeks, resolvedAddress, timeZone, isLoading, isFetching, error, refetch } = useMultiWeekForecasts(
     config.location,
@@ -51,7 +59,8 @@ function WeatherDashboard() {
     ? new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone })
     : null;
 
-  const hasAnyForecast = weeks.some((w) => w.summary !== null);
+  const visibleWeeks = weeks.filter((w) => w.summary !== null);
+  const hasAnyForecast = visibleWeeks.length > 0;
 
   return (
     <>
@@ -88,20 +97,25 @@ function WeatherDashboard() {
           ) : isLoading && config.location ? (
             <LoadingState />
           ) : hasAnyForecast ? (
-            /* Side-by-side carousel: swipe on mobile, grid on desktop */
-            <div className="flex md:grid md:grid-cols-2 overflow-x-auto snap-x snap-mandatory gap-4 animate-fade-up">
-              {weeks.map(({ offset, summary }) =>
-                summary ? (
-                  <div key={offset} className="snap-start shrink-0 w-[90vw] md:w-auto">
-                    <WeatherWeekView
-                      label={weekLabel(offset)}
-                      forecast={summary}
-                      tempUnit={config.tempUnit}
-                      windUnit={config.windUnit}
-                    />
-                  </div>
-                ) : null,
-              )}
+            /* Mobile: one card at a time with prev/next arrows in the heading.
+               Desktop: side-by-side grid, arrows hidden via md:hidden inside WeatherWeekView. */
+            <div className={`${visibleWeeks.length > 1 ? 'md:grid md:grid-cols-2' : ''} gap-4 animate-fade-up`}>
+              {visibleWeeks.map(({ offset, summary }, i) => (
+                // activeTab tracks array index (i), not offset, so filtering
+                // never causes a mismatch when the first week has no data.
+                <div key={offset} className={activeTab !== i ? 'hidden md:block' : ''}>
+                  <WeatherWeekView
+                    label={weekLabel(offset)}
+                    forecast={summary!}
+                    tempUnit={config.tempUnit}
+                    windUnit={config.windUnit}
+                    onPrev={() => setActiveTab(i - 1)}
+                    onNext={() => setActiveTab(i + 1)}
+                    canGoPrev={i > 0}
+                    canGoNext={i < visibleWeeks.length - 1}
+                  />
+                </div>
+              ))}
             </div>
           ) : (
             <EmptyState />
