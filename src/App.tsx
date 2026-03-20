@@ -64,10 +64,6 @@ function WeatherDashboard() {
     2,
   );
 
-  // Derive a display city from the IANA timezone (e.g. "America/Los_Angeles" → "Los Angeles").
-  const locationCity = timeZone
-    ? timeZone.split('/').pop()?.replace(/_/g, ' ') ?? timeZone
-    : null;
   const locationDate = timeZone
     ? new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone })
     : null;
@@ -110,8 +106,8 @@ function WeatherDashboard() {
               resolvedAddress={resolvedAddress ?? undefined}
               isLoading={isFetching}
             />
-            {locationCity && locationDate && hasAnyForecast && (
-              <p className="text-xs text-sand-500">{`${locationCity} — ${locationDate}`}</p>
+            {locationDate && hasAnyForecast && (
+              <p className="text-xs text-sand-500">{`Local date: ${locationDate}`}</p>
             )}
             <div className="flex flex-wrap items-end gap-5">
               <DaySelector selectedDay={config.day} onDayChange={setDay} />
