@@ -47,7 +47,9 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
       return;
     }
 
-    // Cancel any in-flight request
+    // Cancel any in-flight request before starting a new one.
+    // Without this, fast typing could cause earlier slow responses to overwrite
+    // later fast ones (stale response race condition).
     abortRef.current?.abort();
     abortRef.current = new AbortController();
 
@@ -59,7 +61,6 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
         q: searchText,
         format: 'json',
         limit: '5',
-        addressdetails: '1',
       });
 
       const res = await fetch(
@@ -95,7 +96,8 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
     }
   }, []);
 
-  // Debounced input handler
+  // Debounced input handler — waits DEBOUNCE_MS after the user stops typing
+  // before calling fetchSuggestions. This prevents a network request on every keystroke.
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -129,11 +131,13 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
         case 'ArrowDown':
           e.preventDefault();
           if (suggestions.length === 0) return;
+          // Modulo wraps around: going past the last item cycles back to the first
           setActiveIndex((prev) => (prev + 1) % suggestions.length);
           break;
         case 'ArrowUp':
           e.preventDefault();
           if (suggestions.length === 0) return;
+          // + suggestions.length before modulo prevents negative index in JS
           setActiveIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
           break;
         case 'Enter':
@@ -256,6 +260,8 @@ export function LocationInput({ onLocationChange, initialValue = '', resolvedAdd
                 id={`suggestion-${index}`}
                 role="option"
                 aria-selected={index === activeIndex}
+                // onMouseDown fires before onBlur on the input, so the dropdown
+                // stays open long enough for the click to register.
                 onMouseDown={() => handleSelect(suggestion)}
                 onMouseEnter={() => setActiveIndex(index)}
                 className={`px-4 py-2.5 cursor-pointer transition-colors duration-100

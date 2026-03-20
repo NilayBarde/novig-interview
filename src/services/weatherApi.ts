@@ -18,6 +18,10 @@ export async function fetchWeatherForecast(location: string, signal?: AbortSigna
   }
 
   const encodedLocation = encodeURIComponent(location);
+  // Visual Crossing's Timeline API returns 15 days by default when no date range
+  // is specified. We make one call and slice the response client-side for both
+  // weeks — 15 days comfortably covers the worst case (day selected is 7 days
+  // out, so the second occurrence is at day 14).
   const url = `${VISUAL_CROSSING_BASE_URL}/${encodedLocation}?unitGroup=us&include=days,hours&elements=datetime,temp,tempmax,tempmin,humidity,precip,precipprob,windspeed,windgust,conditions,icon&key=${VISUAL_CROSSING_API_KEY}`;
 
   let response: Response;

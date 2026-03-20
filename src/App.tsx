@@ -49,7 +49,10 @@ function WeatherDashboard() {
 
   // Reset to first tab whenever the user picks a different location or day,
   // so a stale activeTab=1 never leaves the content area blank.
-  // Pattern: store the last-seen key as state; when it differs, reset during render.
+  // This uses React's "derive state during render" pattern — instead of an effect
+  // (which would fire a frame late and cause a flash), we compare to the previous
+  // render's key and call setState synchronously if it changed. React re-renders
+  // immediately with the corrected state.
   const locationDayKey = `${config.location}|${config.day}`;
   const [prevLocationDayKey, setPrevLocationDayKey] = useState(locationDayKey);
   if (prevLocationDayKey !== locationDayKey) {
@@ -78,20 +81,16 @@ function WeatherDashboard() {
   const allDisplayTemps = visibleWeeks.flatMap(
     (w) => w.summary?.hourlyTemps.map((h) => displayTemp(h.temp, config.tempUnit)) ?? [],
   );
+  const tempMin = snapDown(safeMin(allDisplayTemps));
+  const tempMax = snapUp(safeMax(allDisplayTemps));
+  const tempDomain: [number, number] | undefined = allDisplayTemps.length > 0 ? [tempMin, tempMax] : undefined;
+
   const allDisplayWinds = visibleWeeks.flatMap(
     (w) => w.summary?.hourlyWindSpeed.map((h) => displayWindSpeed(h.windSpeed, config.windUnit)) ?? [],
   );
-  const tempDomain: [number, number] | undefined =
-    allDisplayTemps.length > 0
-      ? [snapDown(safeMin(allDisplayTemps)), snapUp(safeMax(allDisplayTemps))]
-      : undefined;
-  const windDomain: [number, number] | undefined =
-    allDisplayWinds.length > 0
-      ? [
-          Math.max(0, snapDown(safeMin(allDisplayWinds))), // clamp at 0 — negative wind speed is meaningless
-          snapUp(safeMax(allDisplayWinds)),
-        ]
-      : undefined;
+  const windMin = Math.max(0, snapDown(safeMin(allDisplayWinds))); // clamp at 0 — negative wind speed is meaningless
+  const windMax = snapUp(safeMax(allDisplayWinds));
+  const windDomain: [number, number] | undefined = allDisplayWinds.length > 0 ? [windMin, windMax] : undefined;
 
   return (
     <>
@@ -131,24 +130,27 @@ function WeatherDashboard() {
             /* Mobile: one card at a time with prev/next arrows in the heading.
                Desktop: side-by-side grid, arrows hidden via md:hidden inside WeatherWeekView. */
             <div className={`${visibleWeeks.length > 1 ? 'md:grid md:grid-cols-2' : ''} gap-4 animate-fade-up`}>
-              {visibleWeeks.map(({ offset, summary }, i) => (
+              {visibleWeeks.map(({ offset, summary }, i) => {
                 // activeTab tracks array index (i), not offset, so filtering
                 // never causes a mismatch when the first week has no data.
-                <div key={offset} className={activeTab !== i ? 'hidden md:block' : ''}>
-                  <WeatherWeekView
-                    label={weekLabel(offset)}
-                    forecast={summary!}
-                    tempUnit={config.tempUnit}
-                    windUnit={config.windUnit}
-                    tempDomain={tempDomain}
-                    windDomain={windDomain}
-                    onPrev={() => setActiveTab(i - 1)}
-                    onNext={() => setActiveTab(i + 1)}
-                    canGoPrev={i > 0}
-                    canGoNext={i < visibleWeeks.length - 1}
-                  />
-                </div>
-              ))}
+                const isHiddenOnMobile = activeTab !== i;
+                return (
+                  <div key={offset} className={isHiddenOnMobile ? 'hidden md:block' : ''}>
+                    <WeatherWeekView
+                      label={weekLabel(offset)}
+                      forecast={summary!}
+                      tempUnit={config.tempUnit}
+                      windUnit={config.windUnit}
+                      tempDomain={tempDomain}
+                      windDomain={windDomain}
+                      onPrev={() => setActiveTab(i - 1)}
+                      onNext={() => setActiveTab(i + 1)}
+                      canGoPrev={i > 0}
+                      canGoNext={i < visibleWeeks.length - 1}
+                    />
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <EmptyState />

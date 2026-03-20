@@ -43,6 +43,9 @@ export function useMultiWeekForecasts(
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
+  // useMemo recomputes weekly summaries only when the raw API data or user
+  // selections change — not on every render. The API data is cached by React
+  // Query, so this avoids re-slicing the same 15-day response on every keystroke.
   const weeks = useMemo(() => {
     const results: Array<{ offset: number; summary: WeatherSummary | null }> = [];
 
@@ -58,15 +61,10 @@ export function useMultiWeekForecasts(
     // consistent anchor — avoids a theoretical inconsistency if the time-window
     // boundary fires between iterations.
     const baseDate = getBaseEventDate(day, tz, timeRange?.endHour);
+    const baseYmd = { year: baseDate.getFullYear(), month: baseDate.getMonth() + 1, day: baseDate.getDate() };
 
     for (let offset = 0; offset < weekCount; offset++) {
-      const targetDate =
-        offset === 0
-          ? baseDate
-          : addDaysToYmd(
-              { year: baseDate.getFullYear(), month: baseDate.getMonth() + 1, day: baseDate.getDate() },
-              offset * 7,
-            );
+      const targetDate = addDaysToYmd(baseYmd, offset * 7);
 
       const formatted = formatDate(targetDate);
       const human = formatDateHuman(targetDate);

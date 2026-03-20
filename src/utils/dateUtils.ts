@@ -42,9 +42,10 @@ function getYmdInTimeZone(from: Date, timeZone?: string): { year: number; month:
       day: '2-digit',
     }).formatToParts(from);
 
-    const year = Number(parts.find((p) => p.type === 'year')?.value);
-    const month = Number(parts.find((p) => p.type === 'month')?.value);
-    const day = Number(parts.find((p) => p.type === 'day')?.value);
+    const getPart = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+    const year = getPart('year');
+    const month = getPart('month');
+    const day = getPart('day');
 
     if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
       return { year: from.getFullYear(), month: from.getMonth() + 1, day: from.getDate() };
@@ -85,10 +86,8 @@ export function getNextDayOfWeek(dayName: DayOfWeek, timeZone?: string, from: Da
  */
 export function getFollowingWeekDay(dayName: DayOfWeek, timeZone?: string, from: Date = new Date()): Date {
   const nextOccurrence = getNextDayOfWeek(dayName, timeZone, from);
-  return addDaysToYmd(
-    { year: nextOccurrence.getFullYear(), month: nextOccurrence.getMonth() + 1, day: nextOccurrence.getDate() },
-    7,
-  );
+  const nextYmd = { year: nextOccurrence.getFullYear(), month: nextOccurrence.getMonth() + 1, day: nextOccurrence.getDate() };
+  return addDaysToYmd(nextYmd, 7);
 }
 
 /**
@@ -145,8 +144,8 @@ export function getCurrentHourInTimeZone(timeZone?: string, now: Date = new Date
       hour: 'numeric',
       hour12: false,
     }).formatToParts(now);
-    const hourStr = parts.find((p) => p.type === 'hour')?.value ?? '';
-    const hour = parseInt(hourStr, 10);
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+    const hour = parseInt(getPart('hour'), 10);
     // Intl can return 24 for midnight in hour12: false mode — normalise to 0
     return Number.isFinite(hour) ? hour % 24 : now.getHours();
   } catch {

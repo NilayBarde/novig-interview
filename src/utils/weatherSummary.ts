@@ -48,15 +48,21 @@ export function summarizeDay(day: DayData, dayLabel: string, timeRange: TimeRang
     };
   }
 
+  const temps = hours.map((h) => h.temp);
+  const highTemp = Math.max(...temps);
+  const lowTemp = Math.min(...temps);
+  const precipProb = Math.max(...hours.map((h) => h.precipprob));
+  const maxWindGust = Math.max(...hours.map((h) => h.windgust));
+
   return {
     date: day.datetime,
     dayLabel,
-    avgTemp: avg(hours.map((h) => h.temp)),
-    highTemp: Math.max(...hours.map((h) => h.temp)),
-    lowTemp: Math.min(...hours.map((h) => h.temp)),
-    precipProb: Math.max(...hours.map((h) => h.precipprob)),
+    avgTemp: avg(temps),
+    highTemp,
+    lowTemp,
+    precipProb,
     avgWindSpeed: avg(hours.map((h) => h.windspeed)),
-    maxWindGust: Math.max(...hours.map((h) => h.windgust)),
+    maxWindGust,
     conditions: day.conditions,
     humidity: avg(hours.map((h) => h.humidity)),
     hourlyTemps: hours.map((h) => ({ hour: parseHour(h.datetime), temp: h.temp })),

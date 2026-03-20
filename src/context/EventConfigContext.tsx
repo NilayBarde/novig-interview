@@ -60,6 +60,8 @@ export function EventConfigProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
   }, [config]);
 
+  // useCallback stabilizes these setter references so child components that receive
+  // them as props don't re-render unnecessarily when the parent re-renders.
   const setLocation = useCallback((location: string) => {
     setConfig((prev) => ({ ...prev, location }));
   }, []);

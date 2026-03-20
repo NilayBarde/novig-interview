@@ -46,6 +46,27 @@ export function WeatherChart({
     windDomain,
   );
 
+  const isRain = metric === 'rain';
+
+  const ChartSeries = isRain ? (
+    <Bar dataKey={dataKey} fill={color} fillOpacity={0.7} radius={[3, 3, 0, 0]} maxBarSize={20} />
+  ) : (
+    <Line
+      type="monotone"
+      dataKey={dataKey}
+      stroke={color}
+      strokeWidth={2.5}
+      dot={{ r: 3, fill: color, strokeWidth: 0 }}
+      activeDot={{ r: 5, fill: color, strokeWidth: 2, stroke: '#fff' }}
+    />
+  );
+
+  const LegendIndicator = isRain ? (
+    <div className="w-3 h-2 rounded-sm" style={{ background: color, opacity: 0.7 }} />
+  ) : (
+    <div className="w-3 h-0.5 rounded-full" style={{ background: color }} />
+  );
+
   return (
     <div
       className="glass-warm rounded-2xl p-4 sm:p-5 shadow-lg shadow-sand-300/20 animate-fade-up"
@@ -84,33 +105,12 @@ export function WeatherChart({
               formatter={tooltipFormatter}
               labelStyle={{ color: '#5e4f3c', fontWeight: 600, marginBottom: 4 }}
             />
-            {metric === 'rain' ? (
-              <Bar
-                dataKey={dataKey}
-                fill={color}
-                fillOpacity={0.7}
-                radius={[3, 3, 0, 0]}
-                maxBarSize={20}
-              />
-            ) : (
-              <Line
-                type="monotone"
-                dataKey={dataKey}
-                stroke={color}
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: color, strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: color, strokeWidth: 2, stroke: '#fff' }}
-              />
-            )}
+            {ChartSeries}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
       <div className="flex items-center gap-1.5 mt-2">
-        {metric === 'rain' ? (
-          <div className="w-3 h-2 rounded-sm" style={{ background: color, opacity: 0.7 }} />
-        ) : (
-          <div className="w-3 h-0.5 rounded-full" style={{ background: color }} />
-        )}
+        {LegendIndicator}
         <span className="text-[10px] font-medium text-sand-500">{legend}</span>
       </div>
     </div>
