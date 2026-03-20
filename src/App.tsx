@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EventConfigProvider, useEventConfig } from './context/EventConfigContext';
 import { useMultiWeekForecasts } from './hooks/useMultiWeekForecasts';
@@ -49,9 +49,13 @@ function WeatherDashboard() {
 
   // Reset to first tab whenever the user picks a different location or day,
   // so a stale activeTab=1 never leaves the content area blank.
-  useEffect(() => {
+  // Pattern: store the last-seen key as state; when it differs, reset during render.
+  const locationDayKey = `${config.location}|${config.day}`;
+  const [prevLocationDayKey, setPrevLocationDayKey] = useState(locationDayKey);
+  if (prevLocationDayKey !== locationDayKey) {
+    setPrevLocationDayKey(locationDayKey);
     setActiveTab(0);
-  }, [config.location, config.day]);
+  }
 
   const { weeks, resolvedAddress, timeZone, isLoading, isFetching, error, refetch } = useMultiWeekForecasts(
     config.location,
